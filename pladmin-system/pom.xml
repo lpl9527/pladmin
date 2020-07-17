@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>pladmin</artifactId>
-        <groupId>org.lpl</groupId>
+        <groupId>com.lpl</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -18,6 +18,14 @@
     </properties>
 
     <dependencies>
+
+        <!--引入系统公共模块-->
+        <dependency>
+            <groupId>com.lpl</groupId>
+            <artifactId>pladmin-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!--springboot websocket-->
         <dependency>
             <groupId>org.springframework.boot</groupId>

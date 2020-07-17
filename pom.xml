@@ -5,12 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!--系统父级依赖-->
-    <groupId>org.lpl</groupId>
+    <groupId>com.lpl</groupId>
     <artifactId>pladmin</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>pladmin-system</module>
+        <module>pladmin-common</module>
     </modules>
 
     <name>PL-ADMIN 后台管理系统</name>

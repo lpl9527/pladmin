@@ -1,0 +1,48 @@
+#开发环境配置
+
+#配置数据源
+spring:
+  datasource:
+    druid:
+      db-type: com.alibaba.druid.pool.DruidDataSource
+      #spring data jpa默认使用hibernate实现，hibernate的showSql只打印sql，但是不打印sql参数、执行信息等，想要看到可结合log4jdbc日志框架完成
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      url: jdbc:log4jdbc:mysql://192.168.2.74:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+      username: root
+      password: supwisdom
+      #初始连接数
+      initial-size: 5
+      #最小连接数
+      min-idle: 10
+      #最大连接数
+      max-active: 20
+      #连接超时时间
+      max-wait: 5000
+      #连接有效性检测时间
+      time-between-eviction-runs-millis: 60000
+      #在连接池中最小生存时间
+      min-evictable-idle-time-millis: 300000
+      #在连接池中的最大生存时间
+      max-evictable-idle-time-millis: 900000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      #检测连接是否有效
+      validation-query: select 1
+      #配置监控统计
+      web-stat-filter:
+        enabled: true
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+      filter:
+        stat:
+          enabled: true
+          #记录慢sql
+          log-slow-sql: true
+          slow-sql-millis: 1000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
