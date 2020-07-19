@@ -5,11 +5,10 @@ spring:
   datasource:
     druid:
       db-type: com.alibaba.druid.pool.DruidDataSource
-      #spring data jpa默认使用hibernate实现，hibernate的showSql只打印sql，但是不打印sql参数、执行信息等，想要看到可结合log4jdbc日志框架完成
-      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-      url: jdbc:log4jdbc:mysql://192.168.2.74:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+      driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      url: jdbc:log4jdbc:mysql://localhost:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
       username: root
-      password: supwisdom
+      password: Gepoint
       #初始连接数
       initial-size: 5
       #最小连接数
@@ -46,3 +45,25 @@ spring:
         wall:
           config:
             multi-statement-allow: true
+  security:
+    user:
+      name: user
+      password: user
+
+#jwt相关配置
+jwt:
+  header: Authorization
+  #令牌前缀
+  token-start-with: Bearer
+  #必须使用最少88位的Base64对该令牌进行编码
+  base64-secret: ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmNTE0MzI=
+  #令牌过期时间（单位：毫秒），默认4小时
+  token-validity-in-millisecond: 14400000
+  #在线用户key
+  online-key: online-token-
+  #验证码
+  code-key: code-key-
+  #token续期检查时间（单位：毫秒），默认30分钟。在token即将过期的时间内用户操作了，则给用户的token续期时间
+  detect: 1800000
+  #续期时间（单位：毫秒），默认1小时
+  renew: 3600000

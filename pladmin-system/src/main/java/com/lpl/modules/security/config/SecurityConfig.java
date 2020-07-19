@@ -4,6 +4,7 @@ import com.lpl.annotation.AnonymousAccess;
 import com.lpl.modules.security.security.JwtAccessDeniedHandler;
 import com.lpl.modules.security.security.JwtAuthenticationEntryPoint;
 import com.lpl.modules.security.security.TokenConfigurer;
+import com.lpl.modules.security.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -51,7 +52,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final CorsFilter corsFilter;    //跨域请求过滤器
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;  //自定义认证异常处理入口
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;    //自定义认证拒绝处理器
-    private
+    private final TokenProvider tokenProvider;      //jwt token提供者类
 
     /**
      * 重写实体类，去掉spring security中自动添加的ROLE_前缀，否则角色不带ROLE_前缀的角色将不会被@PreAuthorize注解识别
@@ -71,7 +72,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * token安全配置适配器
      */
     private TokenConfigurer securityConfigurerAdapter() {
-        return new TokenConfigurer()
+        return new TokenConfigurer(tokenProvider);
     }
 
     /**
@@ -98,6 +99,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 anonymousUrls.addAll(infoEntity.getKey().getPatternsCondition().getPatterns());
             }
         }
+        System.err.println("=================" + anonymousUrls);
         httpSecurity
                 //禁用CSRF（跨站请求伪造）
                 .csrf().disable()
@@ -141,12 +143,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 //自定义匿名访问的所有url放行
-                .antMatchers(anonymousUrls.toArray(new String[0])).permitAll()
+                //.antMatchers(anonymousUrls.toArray(new String[0])).permitAll()
 
                 //除上面放行的所有请求都需要认证
                 .anyRequest().authenticated()
                 .and()
-                .apply(secu)
+                .apply(securityConfigurerAdapter());    //这里的认证是使用jwt token优先，没有token时进行用户名、密码验证
 
     }
 }
