@@ -143,7 +143,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 //自定义匿名访问的所有url放行
-                //.antMatchers(anonymousUrls.toArray(new String[0])).permitAll()
+                .antMatchers(anonymousUrls.toArray(new String[0])).permitAll()
 
                 //除上面放行的所有请求都需要认证
                 .anyRequest().authenticated()
