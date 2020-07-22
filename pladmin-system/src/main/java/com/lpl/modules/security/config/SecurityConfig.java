@@ -99,7 +99,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 anonymousUrls.addAll(infoEntity.getKey().getPatternsCondition().getPatterns());
             }
         }
-        System.err.println("=================" + anonymousUrls);
+        System.err.println("可匿名访问的接口：=================" + anonymousUrls);
         httpSecurity
                 //禁用CSRF（跨站请求伪造）
                 .csrf().disable()
@@ -149,6 +149,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and()
                 .apply(securityConfigurerAdapter());    //这里的认证是使用jwt token优先，没有token时进行用户名、密码验证
-
     }
 }

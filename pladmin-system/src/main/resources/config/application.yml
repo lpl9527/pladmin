@@ -3,4 +3,20 @@ server:
 
 spring:
   profiles:
-    active: dev
+    active: dev   #激活的配置文件
+  jackson:
+    time-zone: GMT+8  #设置jackson时区
+  data:
+    redis:
+      repositories:
+        enabled: false  #关闭redis repository的支持
+  freemarker:
+    check-template-location: false  #关闭freemarker检查模板位置
+
+  #redis配置相关
+  redis:
+    database: 0
+    host: 192.168.2.75
+    port: 6379
+    password:
+    timeout: 5000
