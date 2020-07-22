@@ -10,7 +10,14 @@ import java.sql.Timestamp;
 
 /**
  * @author lpl
- * 基础数据传输对象
+ * 定义基础数据传输对象
+ *
+ * VO（view object）：表现层对象代表展示层需要显示的数据。
+ * DTO（Data Transfer Object）： 数据传输对象，可用于放置一些不需要与数据库交互或者定制化放置一个或多个实体类的字段。用于客户端与服务端进行跨进程或远程数据传输。
+ * PO（persistent object）：持久对象，对应数据库中的entity，可以简单认为一个PO对应数据库中的一条记录。
+ * DAO（data access object）：数据访问对象，用于与数据库进行数据交互，封装对数据库的访问。
+ *
+ * POJO（plain ordinary java object）：无规则简单java对象，一个中间对象，可以转化为PO、DTO、VO。
  */
 @Getter
 @Setter

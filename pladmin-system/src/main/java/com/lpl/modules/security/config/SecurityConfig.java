@@ -145,6 +145,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 //自定义匿名访问的所有url放行
                 .antMatchers(anonymousUrls.toArray(new String[0])).permitAll()
 
+                //上面的permitAll()方法只能对SpringSecurity定义的过滤器放行，自定义的不会放行，除非执行filterChain.doFilter(servletRequest, servletResponse)对请求进行放行。
+
                 //除上面放行的所有请求都需要认证
                 .anyRequest().authenticated()
                 .and()

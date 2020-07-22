@@ -1,12 +1,15 @@
 package com.lpl.modules.security.rest;
 
+import cn.hutool.core.util.IdUtil;
 import com.lpl.annotation.AnonymousAccess;
 import com.lpl.modules.security.config.SecurityProperties;
+import com.lpl.utils.RedisUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,10 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  *  @author lpl
- *  提供授权，根据token获取用户详细信息
+ *  提供授权相关API
  */
 @Slf4j
 @RestController
@@ -25,7 +29,30 @@ import java.util.Map;
 @Api(tags = "系统：系统授权接口")
 public class AuthorizationController {
 
-    private final SecurityProperties securityProperties;
+    /**
+     * 这里简单说一下SpringSecurity认证的流程（可以参考UsernamePasswordAuthenticationFilter类的源码）：
+     *
+     *  1.首先进入过滤器AbstractAuthenticationProcessingFilter，执行doFilter()方法；
+     *  2.需要进行验证的请求会调用实现类UsernamePasswordAuthenticationFilter的attemptAuthentication(request, response)方法将request中传来的username、
+     *      password构造UsernamePasswordAuthenticationToken对象（实际为Authentication接口的实现类）。
+     *  3.通过ProviderManager类的authenticate(authentication)方法将上面的获取的UsernamePasswordAuthenticationToken对象作为参数传入进行认证。但实际
+     *      上ProviderManager管理了许多AuthenticationProviders，验证工作交由AuthenticationProvider来处理，调用实现类AbstractUserDetailsAuthenticationProvider的
+     *      authenticate(authentication)来处理。
+     *  4.此时AbstractUserDetailsAuthenticationProvider会调用子类DaoAuthenticationProvider的retrieveUser(username, authentication)方法来进行验证，而方法中会
+     *      调用UserDetailsService接口对应实现类（需要我们实现，根据用户名从数据库中查询出用户信息）的loadUserByUserName(username)方法（这个username参数就是上一步传入
+     *      的待验证的用户名）获取用户信息，返回UserDetails对象。    可以参考DaoAuthenticationProvider类的源码。
+     *  5.最后AbstractUserDetailsAuthenticationProvider类再根据DaoAuthenticationProvider返回的UserDetails对象与待验证的用户名、密码进行对比，然后返回Authentication对象。
+     *
+     *  补充：SpringSecurity通过Session来保存用户信息。
+     *      可以通过SecurityContextHolder.getContext().setAuthentication(authentication)将认证信息放入Session中。
+     *      可以通过SecurityContextHolder.getContext().getAuthentication()来获得认证信息。
+     */
+
+    @Value("${loginCode.expiration}")
+    private Long expiration;    //登录图形验证码过期时间（单位：分钟）
+
+    private final SecurityProperties securityProperties;    //spring security属性配置
+    private final RedisUtils redisUtils;    //redis工具类
 
     /**
      * 获取图片验证码
@@ -42,14 +69,24 @@ public class AuthorizationController {
         captcha.setLen(2);
         //获取运算的结果
         String result = captcha.text();
-        //String uuid = securityProperties.getCodeKey() +
-        //保存验证码结果到redis设置过期时间
-        //TODO
+        String uuid = securityProperties.getCodeKey() + IdUtil.simpleUUID();    //将code-key-与uuid拼接作为验证码的key
+        //保存验证码结果到redis并设置过期时间
+        redisUtils.set(uuid, result, expiration, TimeUnit.MINUTES);       //将图形验证码结果放入redis，key为生成的uuid
         //返回验证码信息
         Map<String, Object> imgResult = new HashMap<String, Object>(2) {{
-            put("img", captcha.toBase64());
-            //put("uuid", uuid);
+            put("img", captcha.toBase64());     //img为svg图片验证码图案
+            put("uuid", uuid);      //每张图对应一个uuid，传到前端，用于登录时再返回到服务端作为key从缓存中查找验证码结果进行比对
         }};
         return ResponseEntity.ok(imgResult);
+    }
+
+    public static void main(String[] args) {
+        //验证码测试
+        ArithmeticCaptcha captcha = new ArithmeticCaptcha(111, 36);
+        captcha.setLen(2);
+        String result = captcha.text();
+        String s = captcha.toBase64();
+        System.out.println("验证码运算结果===" + result);
+        System.out.println("验证码图案数据===" + s);
     }
 }

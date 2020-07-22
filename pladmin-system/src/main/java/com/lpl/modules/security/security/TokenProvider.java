@@ -88,7 +88,7 @@ public class TokenProvider implements InitializingBean {
      */
     Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()    //Jwt token的相关信息全都放在Claims对象中
-            .setSigningKey(key)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -97,8 +97,10 @@ public class TokenProvider implements InitializingBean {
         Collection<? extends GrantedAuthority> authorities = ObjectUtil.isNotEmpty(authoritiesStr) ?
                 Arrays.stream(authoritiesStr.toString().split(",")).map(SimpleGrantedAuthority::new).collect(Collectors.toList())
                 : Collections.emptyList();
+        //此User对象实现了UserDetails接口，可用于认证
         User principal = new User(claims.getSubject(), "", authorities);
-
+        //UsernamePasswordAuthenticationToken继承了AbstractAuthenticationToken类，而此类又实现了Authentication接口，而Authentication接口会调用子类
+        //  UserDetailsService的方法loadUserByUserName(username)，对传入的用户名进行验证
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 

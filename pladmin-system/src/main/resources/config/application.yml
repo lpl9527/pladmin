@@ -13,10 +13,28 @@ spring:
   freemarker:
     check-template-location: false  #关闭freemarker检查模板位置
 
-  #redis配置相关
+  #redis相关配置
   redis:
     database: 0
     host: 192.168.2.75
     port: 6379
     password:
     timeout: 5000
+
+  #jpa相关配置
+  jpa:
+    properties:
+      hibernate:
+        # create 每次运行该程序，没有表格会新建表格，表内有数据会清空
+        # create-drop 每次程序结束的时候会清空表
+        # update 每次运行程序，没有表格会新建表格，表内有数据不会清空，只会更新
+        # validate 运行程序会校验数据与数据库的字段类型是否相同，不同会报错
+        # none 每次启动与关闭应用不对数据表做任何操作
+        ddl-auto: none
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+    open-in-view: true
+
+
+#登录图形验证码有效时间（单位：分钟）
+loginCode:
+  expiration: 2
