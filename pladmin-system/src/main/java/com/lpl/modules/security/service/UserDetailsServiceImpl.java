@@ -1,5 +1,7 @@
 package com.lpl.modules.security.service;
 
+import com.lpl.exception.EntityNotFoundException;
+import com.lpl.modules.system.service.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,6 +23,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) {
+        UserDto userDto;
+        try{
+
+        }catch (EntityNotFoundException e) {
+            // SpringSecurity会自动转换UsernameNotFoundException为BadCredentialsException
+            throw new UsernameNotFoundException("", e);
+        }
         return null;
     }
 }
