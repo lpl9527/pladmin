@@ -25,11 +25,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) {
         UserDto userDto;
         try{
-
+            user =
         }catch (EntityNotFoundException e) {
             // SpringSecurity会自动转换UsernameNotFoundException为BadCredentialsException
             throw new UsernameNotFoundException("", e);
         }
+        if(null == user)
         return null;
     }
 }
