@@ -5,11 +5,17 @@ import com.lpl.utils.SpringContextHolder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@EnableAsync    //开启异步
 @RestController
 @SpringBootApplication
+@EnableTransactionManagement    //开启事务
+@EnableJpaAuditing(auditorAwareRef = "auditorAware")    //开启支持Jpa监控属性的变化，指定配置为注入的auditorAware组件
 public class PlAdminApp {
 
     public static void main(String[] args) {

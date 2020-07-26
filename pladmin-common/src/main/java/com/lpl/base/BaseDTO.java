@@ -46,7 +46,7 @@ public class BaseDTO implements Serializable {
                 builder.append(field.getName(), field.get(this)).append("\n");
             }
         }catch (Exception e) {
-            builder.append("toString builder occur an error!");
+            builder.append("toString()方法发生错误！");
         }
         return builder.toString();
     }

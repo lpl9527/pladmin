@@ -2,8 +2,13 @@ package com.lpl.modules.security.rest;
 
 import cn.hutool.core.util.IdUtil;
 import com.lpl.annotation.AnonymousAccess;
+import com.lpl.config.RsaProperties;
+import com.lpl.exception.BadRequestException;
 import com.lpl.modules.security.config.SecurityProperties;
+import com.lpl.modules.security.service.dto.AuthUserDto;
 import com.lpl.utils.RedisUtils;
+import com.lpl.utils.RsaUtils;
+import com.lpl.utils.StringUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -11,10 +16,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +61,6 @@ public class AuthorizationController {
 
     /**
      * 获取图片验证码
-     * @return
      */
     @AnonymousAccess    //可以匿名访问的方法
     @ApiOperation("获取图片验证码")
@@ -78,6 +82,26 @@ public class AuthorizationController {
             put("uuid", uuid);      //每张图对应一个uuid，传到前端，用于登录时再返回到服务端作为key从缓存中查找验证码结果进行比对
         }};
         return ResponseEntity.ok(imgResult);
+    }
+
+    @AnonymousAccess
+    @PostMapping(value = "/auth/login")
+    public ResponseEntity<Object> login(@Validated @RequestBody AuthUserDto authUser, HttpServletRequest request) throws Exception{  //@Validated注解用于对传入的实体bean属性进行校验
+
+        //密码解密
+        String password = RsaUtils.decryptByPrivateKey(RsaProperties.privateKey, authUser.getPassword());
+        //从redis中查询验证码
+        String code = (String) redisUtils.get(authUser.getUuid());
+        //拿到验证码后就从redis中清除此验证码
+        redisUtils.del(authUser.getUuid());
+
+        if (StringUtils.isBlank(code)) {
+            throw new BadRequestException("验证码不存在或已过期！");
+        }
+        if (StringUtils.isBlank(authUser.getCode()) || !authUser.getCode().equalsIgnoreCase(code)) {
+            throw new BadRequestException("验证码错误！");
+        }
+        return null;
     }
 
     public static void main(String[] args) {
