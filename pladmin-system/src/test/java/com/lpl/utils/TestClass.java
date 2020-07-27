@@ -1,6 +1,8 @@
 package com.lpl.utils;
 
 import com.lpl.PlAdminApp;
+import com.lpl.modules.system.service.UserService;
+import com.lpl.modules.system.service.dto.UserDto;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,10 +14,19 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)    //设置启动器
 @SpringBootTest(classes = PlAdminApp.class) //指定启动类
-public class RedisUtilsTest {
+public class TestClass {
 
     @Autowired
     private RedisUtils redisUtils;
+
+    @Autowired
+    private UserService userService;
+
+    @Test
+    public void userTest() {
+        UserDto userDto = userService.findByName("admin");
+        System.out.println(userDto);
+    }
 
     @Test
     public void setTest(){

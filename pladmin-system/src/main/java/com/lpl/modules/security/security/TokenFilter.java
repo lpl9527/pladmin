@@ -39,7 +39,7 @@ public class TokenFilter extends GenericFilterBean {
         HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
         //获取token
         String token = tokenProvider.getToken(httpServletRequest);
-        if (StrUtil.isNotBlank(token)){     //如果请求中没有token，则不需要去查redis进行token续期，以及添加到认证上下文
+        if (StrUtil.isNotBlank(token)){     //如果请求中有token，则需要去查redis进行token续期，以及添加到认证上下文
             OnlineUserDto onlineUserDto = null; //在线用户
             SecurityProperties securityProperties = SpringContextHolder.getBean(SecurityProperties.class);  //获取安全配置
             try{

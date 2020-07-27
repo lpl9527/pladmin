@@ -22,7 +22,7 @@ public class OnlineUserDto {
     /**
      * 昵称
      */
-    private String nockName;
+    private String nickName;
     /**
      * 岗位
      */
@@ -40,7 +40,7 @@ public class OnlineUserDto {
      */
     private String address;
     /**
-     * token的key
+     * 对token进行加密的值
      */
     private String key;
     /**

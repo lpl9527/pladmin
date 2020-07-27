@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author lpl
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Cacheable(key = "'username:' + #p0")
+    @Transactional      //由于Session是被立即关闭的，在我们读取了类的基本属性后，Session已经关闭了，再进行懒加载就会异常。解决：在方法上加上事务。
     public UserDto findByName(String username) {
         User user = userRepository.findByUsername(username);
         if (null == user) {
