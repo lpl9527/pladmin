@@ -52,7 +52,7 @@ public class Menu extends BaseEntity {
     @ApiModelProperty(value = "菜单排序序号")
     private Integer menuSort = 999;
 
-    @ApiModelProperty(value = "菜单类型（目录、菜单、按钮）")
+    @ApiModelProperty(value = "菜单类型（目录-0、菜单-1、按钮-2）")
     private Integer type;
 
     @ApiModelProperty(value = "菜单权限标识")

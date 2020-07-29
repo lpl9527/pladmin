@@ -12,7 +12,14 @@ public interface MenuService {
 
     /**
      * 获取当前用户的菜单列表
-     * @param userId
+     * @param userId    当前用户id
      */
     List<MenuDto> findByUser(Long userId);
+
+    /**
+     * 构建菜单树
+     * @param menuDtos  菜单列表
+     */
+    List<MenuDto> buildTree(List<MenuDto> menuDtos);
+
 }
