@@ -11,6 +11,7 @@ import com.lpl.modules.security.service.dto.AuthUserDto;
 import com.lpl.modules.security.service.dto.JwtUserDto;
 import com.lpl.utils.RedisUtils;
 import com.lpl.utils.RsaUtils;
+import com.lpl.utils.SecurityUtils;
 import com.lpl.utils.StringUtils;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.jsonwebtoken.Jwt;
@@ -141,6 +142,14 @@ public class AuthorizationController {
             put("uuid", uuid);      //每张图对应一个uuid，传到前端，用于登录时再返回到服务端作为key从缓存中查找验证码结果进行比对
         }};
         return ResponseEntity.ok(imgResult);
+    }
+
+    /**
+     * 获取当前用户信息
+     */
+    @GetMapping("/auth/info")
+    public ResponseEntity<Object> getUserInfo() {
+        return ResponseEntity.ok(SecurityUtils.getCurrentUser());
     }
 
     public static void main(String[] args) {

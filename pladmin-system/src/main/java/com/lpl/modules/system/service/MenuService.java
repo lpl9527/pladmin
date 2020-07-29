@@ -1,5 +1,6 @@
 package com.lpl.modules.system.service;
 
+import com.lpl.modules.system.domain.vo.MenuVo;
 import com.lpl.modules.system.service.dto.MenuDto;
 
 import java.util.List;
@@ -21,5 +22,11 @@ public interface MenuService {
      * @param menuDtos  菜单列表
      */
     List<MenuDto> buildTree(List<MenuDto> menuDtos);
+
+    /**
+     * 构建菜单树
+     * @param menuDtos
+     */
+    List<MenuVo> buildMenus(List<MenuDto> menuDtos);
 
 }

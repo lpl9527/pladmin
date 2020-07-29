@@ -1,12 +1,17 @@
 package com.lpl.modules.system.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.lpl.modules.system.domain.Menu;
+import com.lpl.modules.system.domain.vo.MenuMetaVo;
+import com.lpl.modules.system.domain.vo.MenuVo;
 import com.lpl.modules.system.mapstruct.MenuMapper;
 import com.lpl.modules.system.repository.MenuRepository;
 import com.lpl.modules.system.service.MenuService;
 import com.lpl.modules.system.service.RoleService;
 import com.lpl.modules.system.service.dto.MenuDto;
 import com.lpl.modules.system.service.dto.RoleSmallDto;
+import com.lpl.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
@@ -78,8 +83,71 @@ public class MenuServiceImpl implements MenuService {
         }
         //如果都没有根目录（都是一级菜单）
         if (tree.size() == 0) {
-            tree = menuDtos.stream().filter(s -> !)
+            tree = menuDtos.stream().filter(s -> !ids.contains(s.getId())).collect(Collectors.toList());
         }
-        return null;
+        return tree;
+    }
+
+    /**
+     * 构建菜单树
+     * @param menuDtos
+     */
+    @Override
+    public List<MenuVo> buildMenus(List<MenuDto> menuDtos) {
+
+        //存放结果
+        List<MenuVo> list = new LinkedList<>();
+        //遍历菜单集合，构建菜单树
+        menuDtos.forEach(menuDto -> {
+            if (menuDto != null) {
+                //获取子菜单列表
+                List<MenuDto> menuDtoList = menuDto.getChildren();
+
+                MenuVo menuVo = new MenuVo();
+                //设置菜单对应的组件名称
+                menuVo.setName(ObjectUtil.isNotEmpty(menuDto.getComponentName()) ? menuDto.getComponentName() : menuDto.getTitle());
+                //设置组件路由地址，如果是根路径，就要加上 /
+                menuVo.setPath(menuDto.getPid() == null ? "/" + menuDto.getPath() : menuDto.getPath());
+                //组件是否隐藏
+                menuVo.setHidden(menuDto.getHidden());
+                //如果不是外部链接组件
+                if (!menuDto.getIFrame()) {
+                    //如果是根目录并且组件地址为空，则默认设置为 Layout
+                    if (menuDto.getPid() == null) {
+                        menuVo.setComponent(StrUtil.isEmpty(menuDto.getComponent()) ? "Layout" : menuDto.getComponent());
+                    }else if (!StrUtil.isEmpty(menuDto.getComponent())){
+                        menuVo.setComponent(menuDto.getComponent());
+                    }
+                }
+                //设置菜单信息元数据
+                menuVo.setMeta(new MenuMetaVo(menuDto.getTitle(), menuDto.getIcon(), !menuDto.getCache()));
+                if (menuDtoList != null && menuDtoList.size() != 0){
+                    menuVo.setAlwaysShow(true);
+                    menuVo.setRedirect("noredirect");
+                    //递归构建菜单
+                    menuVo.setChildren(buildMenus(menuDtoList));
+                }else if (menuDto.getPid() == null) {   //处理一级菜单并且没有子菜单的情况
+
+                    MenuVo menuVo1 = new MenuVo();
+                    menuVo1.setMeta(menuVo.getMeta());
+                    //非外链
+                    if (!menuDto.getIFrame()) {
+                        menuVo1.setPath("index");
+                        menuVo1.setName(menuVo.getName());
+                        menuVo1.setComponent(menuVo.getComponent());
+                    }else{
+                        menuVo1.setPath(menuDto.getPath());
+                    }
+                    menuVo.setName(null);
+                    menuVo.setMeta(null);
+                    menuVo.setComponent("Layout");
+                    List<MenuVo> list1 = new ArrayList<>();
+                    list1.add(menuVo1);
+                    menuVo.setChildren(list1);
+                }
+                list.add(menuVo);
+            }
+        });
+        return list;
     }
 }

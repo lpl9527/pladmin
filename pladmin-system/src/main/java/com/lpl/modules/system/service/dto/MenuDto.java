@@ -37,7 +37,7 @@ public class MenuDto extends BaseDTO {
 
     private Integer subCount;   //子菜单数量
 
-    private Boolean isFrame;    //是否是外链菜单
+    private Boolean iFrame;    //是否是外链菜单
 
     private Boolean cache;  //是否缓存
 
