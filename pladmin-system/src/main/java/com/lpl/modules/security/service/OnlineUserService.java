@@ -75,7 +75,7 @@ public class OnlineUserService {
      */
     public void save(JwtUserDto jwtUserDto, String token, HttpServletRequest request) {
         //获取部门名称
-        String deptName = jwtUserDto.getUserDto().getDept().getName();
+        String deptName = jwtUserDto.getUser().getDept().getName();
         //获取请求ip
         String ip = StringUtils.getIp(request);
         //获取浏览器名称
@@ -86,7 +86,7 @@ public class OnlineUserService {
         OnlineUserDto onlineUserDto = null;
         try {
             //构造在线用户数据传输对象，其中对token进行了DES对称加密
-            onlineUserDto = new OnlineUserDto(jwtUserDto.getUsername(), jwtUserDto.getUserDto().getNickName(), deptName, browser, ip, address, EncryptUtils.desEncrypt(token), new Date());
+            onlineUserDto = new OnlineUserDto(jwtUserDto.getUsername(), jwtUserDto.getUser().getNickName(), deptName, browser, ip, address, EncryptUtils.desEncrypt(token), new Date());
         }catch (Exception e) {
             e.printStackTrace();
         }

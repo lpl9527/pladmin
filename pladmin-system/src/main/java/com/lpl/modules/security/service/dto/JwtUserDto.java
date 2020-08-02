@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class JwtUserDto implements UserDetails {
 
-    private final UserDto userDto;  //用户数据传输对象
+    private final UserDto user;  //用户数据传输对象
 
     private final List<Long> dataScopes; //数据权限列表
 
@@ -38,7 +38,7 @@ public class JwtUserDto implements UserDetails {
     @Override
     @JsonIgnore
     public String getPassword() {
-        return userDto.getPassword();
+        return user.getPassword();
     }
 
     /**
@@ -47,7 +47,7 @@ public class JwtUserDto implements UserDetails {
     @Override
     @JsonIgnore
     public String getUsername() {
-        return userDto.getUsername();
+        return user.getUsername();
     }
 
     /**
@@ -83,6 +83,6 @@ public class JwtUserDto implements UserDetails {
     @Override
     @JsonIgnore
     public boolean isEnabled() {
-        return userDto.getEnabled();
+        return user.getEnabled();
     }
 }

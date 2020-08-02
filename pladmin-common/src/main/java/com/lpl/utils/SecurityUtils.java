@@ -59,7 +59,7 @@ public class SecurityUtils {
      */
     public static Long getCurrentUserId() {
         UserDetails userDetails = getCurrentUser();
-        Object user = new JSONObject(userDetails).get("userDto");
+        Object user = new JSONObject(userDetails).get("user");
         return new JSONObject(user).get("id", Long.class);
     }
     /**

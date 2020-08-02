@@ -28,7 +28,6 @@ public class MenuController {
     @RequestMapping("/build")
     public ResponseEntity<Object> buildMenus() {
         Long currentUserId = SecurityUtils.getCurrentUserId();
-        System.out.println(currentUserId);
         List<MenuDto> menuDtoList = menuService.findByUser(SecurityUtils.getCurrentUserId());
         //构建菜单树
         List<MenuDto> menuDtos = menuService.buildTree(menuDtoList);
