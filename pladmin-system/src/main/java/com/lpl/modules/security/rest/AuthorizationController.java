@@ -14,7 +14,6 @@ import com.lpl.utils.RsaUtils;
 import com.lpl.utils.SecurityUtils;
 import com.lpl.utils.StringUtils;
 import com.wf.captcha.ArithmeticCaptcha;
-import io.jsonwebtoken.Jwt;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +80,7 @@ public class AuthorizationController {
      * @throws Exception
      */
     @AnonymousAccess
+    @ApiOperation("登录授权")
     @PostMapping(value = "/auth/login")
     public ResponseEntity<Object> login(@Validated @RequestBody AuthUserDto authUser, HttpServletRequest request) throws Exception{  //@Validated注解用于对传入的实体bean属性进行校验
 
@@ -148,6 +148,7 @@ public class AuthorizationController {
     /**
      * 获取当前用户信息
      */
+    @ApiOperation("获取用户信息")
     @GetMapping("/auth/info")
     public ResponseEntity<Object> getUserInfo() {
         return ResponseEntity.ok(SecurityUtils.getCurrentUser());
@@ -158,19 +159,11 @@ public class AuthorizationController {
      * @param request
      */
     @AnonymousAccess
+    @ApiOperation("退出登录")
     @DeleteMapping(value = "/auth/logout")
     public ResponseEntity<Object> logout(HttpServletRequest request) {
         onlineUserService.logout(tokenProvider.getToken(request));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    public static void main(String[] args) {
-        //验证码测试
-        ArithmeticCaptcha captcha = new ArithmeticCaptcha(111, 36);
-        captcha.setLen(2);
-        String result = captcha.text();
-        String s = captcha.toBase64();
-        System.out.println("验证码运算结果===" + result);
-        System.out.println("验证码图案数据===" + s);
-    }
 }

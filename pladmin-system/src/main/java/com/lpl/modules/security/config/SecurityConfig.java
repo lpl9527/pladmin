@@ -5,6 +5,8 @@ import com.lpl.modules.security.security.JwtAccessDeniedHandler;
 import com.lpl.modules.security.security.JwtAuthenticationEntryPoint;
 import com.lpl.modules.security.security.TokenConfigurer;
 import com.lpl.modules.security.security.TokenProvider;
+import com.lpl.modules.security.service.OnlineUserService;
+import com.lpl.modules.security.service.UserCacheClean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +55,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;  //自定义认证异常处理入口
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;    //自定义认证拒绝处理器
     private final TokenProvider tokenProvider;      //jwt token提供者类
+
+    private final SecurityProperties securityProperties;    //安全配置
+    private final OnlineUserService onlineUserService;
+    private final UserCacheClean userCacheClean;
 
     /**
      * 重写实体类，去掉spring security中自动添加的ROLE_前缀，否则角色不带ROLE_前缀的角色将不会被@PreAuthorize注解识别

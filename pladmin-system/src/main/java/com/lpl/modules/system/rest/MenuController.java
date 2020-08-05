@@ -4,6 +4,8 @@ import com.lpl.modules.system.domain.vo.MenuVo;
 import com.lpl.modules.system.service.MenuService;
 import com.lpl.modules.system.service.dto.MenuDto;
 import com.lpl.utils.SecurityUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
+@Api(tags = "系统：菜单管理")
 @RequestMapping("/api/menus")
 public class MenuController {
 
@@ -25,6 +28,7 @@ public class MenuController {
     /**
      * 根据当前登录用户获取前端所需菜单
      */
+    @ApiOperation("获取前端菜单")
     @RequestMapping("/build")
     public ResponseEntity<Object> buildMenus() {
         Long currentUserId = SecurityUtils.getCurrentUserId();
