@@ -5,6 +5,7 @@ import com.lpl.annotation.AnonymousAccess;
 import com.lpl.config.RsaProperties;
 import com.lpl.exception.BadRequestException;
 import com.lpl.modules.security.config.SecurityProperties;
+import com.lpl.modules.security.config.bean.LoginProperties;
 import com.lpl.modules.security.security.TokenProvider;
 import com.lpl.modules.security.service.OnlineUserService;
 import com.lpl.modules.security.service.dto.AuthUserDto;
@@ -14,6 +15,7 @@ import com.lpl.utils.RsaUtils;
 import com.lpl.utils.SecurityUtils;
 import com.lpl.utils.StringUtils;
 import com.wf.captcha.ArithmeticCaptcha;
+import com.wf.captcha.base.Captcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,25 +65,17 @@ public class AuthorizationController {
      *      可以通过SecurityContextHolder.getContext().getAuthentication()来获得认证信息。
      */
 
-    @Value("${loginCode.expiration}")
-    private Long expiration;    //登录图形验证码过期时间（单位：分钟）
-    @Value("${single.login}")
-    private Boolean singleLogin;
-
     private final SecurityProperties securityProperties;    //spring security属性配置
     private final RedisUtils redisUtils;    //redis工具类
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final TokenProvider tokenProvider;
     private final OnlineUserService onlineUserService;
 
-    /**
-     * 登录逻辑R
-     * @param authUser  前端传入的认证对象信息
-     * @param request
-     * @throws Exception
-     */
+    @Resource
+    private LoginProperties loginProperties;
+
+    @ApiOperation("用户登录")
     @AnonymousAccess
-    @ApiOperation("登录授权")
     @PostMapping(value = "/auth/login")
     public ResponseEntity<Object> login(@Validated @RequestBody AuthUserDto authUser, HttpServletRequest request) throws Exception{  //@Validated注解用于对传入的实体bean属性进行校验
 
@@ -113,30 +108,23 @@ public class AuthorizationController {
             put("token", securityProperties.getTokenStartWith() + token);
             put("user", jwtUserDto);
         }};
-        if (singleLogin) {  //如果只允许单点登录
+        if (loginProperties.isSingleLogin()) {  //如果只允许单点登录
             //踢掉之前已经存在的token
             onlineUserService.checkLoginOnUser(authUser.getUsername(), token);
         }
         return ResponseEntity.ok(authInfo);
     }
 
-    /**
-     * 获取图片验证码
-     */
-    @AnonymousAccess    //可以匿名访问的方法
     @ApiOperation("获取图片验证码")
+    @AnonymousAccess    //可以匿名访问的方法
     @GetMapping("/auth/code")
     public ResponseEntity<Object> getCode() {
 
-        //算术类型验证码 https://gitee.com/whvse/EasyCaptcha
-        ArithmeticCaptcha captcha = new ArithmeticCaptcha(111, 36);
-        //几位数运算，默认两位
-        captcha.setLen(2);
-        //获取运算的结果
-        String result = captcha.text();
+        //获取验证码对象
+        Captcha captcha = loginProperties.getCaptcha();
         String uuid = securityProperties.getCodeKey() + IdUtil.simpleUUID();    //将code-key-与uuid拼接作为验证码的key
         //保存验证码结果到redis并设置过期时间
-        redisUtils.set(uuid, result, expiration, TimeUnit.MINUTES);       //将图形验证码结果放入redis，key为生成的uuid
+        redisUtils.set(uuid, captcha.text(), loginProperties.getLoginCode().getExpiration(), TimeUnit.MINUTES);   //将图形验证码结果放入redis，key为生成的uuid
         //返回验证码信息
         Map<String, Object> imgResult = new HashMap<String, Object>(2) {{
             put("img", captcha.toBase64());     //img为svg图片验证码图案
@@ -145,21 +133,14 @@ public class AuthorizationController {
         return ResponseEntity.ok(imgResult);
     }
 
-    /**
-     * 获取当前用户信息
-     */
     @ApiOperation("获取用户信息")
     @GetMapping("/auth/info")
     public ResponseEntity<Object> getUserInfo() {
         return ResponseEntity.ok(SecurityUtils.getCurrentUser());
     }
 
-    /**
-     * 登出
-     * @param request
-     */
-    @AnonymousAccess
     @ApiOperation("退出登录")
+    @AnonymousAccess
     @DeleteMapping(value = "/auth/logout")
     public ResponseEntity<Object> logout(HttpServletRequest request) {
         onlineUserService.logout(tokenProvider.getToken(request));

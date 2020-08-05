@@ -6,9 +6,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.lpl.modules.security.config.SecurityProperties;
 import com.lpl.utils.RedisUtils;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -49,35 +47,40 @@ public class TokenProvider implements InitializingBean {
      *  6.返回相应结果。
      */
     private final SecurityProperties securityProperties;    //安全相关属性配置
-    private Key key;    //spring security的密钥key
-    private static final String AUTHORITIES_KEY = "auth";   //认证的key
+    public static final String AUTHORITIES_KEY = "auth";   //认证的key
     private final RedisUtils redisUtils;    //redis工具类
+
+    private JwtParser jwtParser;    //jwt解析器
+    private JwtBuilder jwtBuilder;  //jwt构造器
 
     /**
      * 继承InitializingBean接口的Bean，在初始化时都会执行该方法。初始化Bean时生成token
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
-        //解码Base64字符串为字节数组
+    public void afterPropertiesSet() {
         byte[] keyBytes = Decoders.BASE64.decode(securityProperties.getBase64Secret());
-        //根据HMAC非对称算法生成密钥
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+        Key key = Keys.hmacShaKeyFor(keyBytes);
+        jwtParser = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build();
+        jwtBuilder = Jwts.builder()
+                .signWith(key, SignatureAlgorithm.HS512);
     }
 
     /**
      * 生成jwt，并将用户信息放入
-     * @param authentication    //用户信息存储对象
-     * @return  String类型jwt token
+     * @param authentication  用户信息存储对象
+     * @return  jwt token
      */
     public String createToken(Authentication authentication) {  //Authentication对象用于描述当前用户的相关信息，存在于SecurityContext，会自动被创建
         String authorities = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(","));
 
         //构建Jwt对象生成jwt token
-        return Jwts.builder()   //构建Jwt对象
-                .setSubject(authentication.getName())   //设置主体名称为用户名
+        return jwtBuilder
+                // 加入ID确保生成的 Token 都不一致
+                .setId(IdUtil.simpleUUID())
                 .claim(AUTHORITIES_KEY, authorities)
-                .signWith(key, SignatureAlgorithm.HS512)    //登录采用的签名算法
-                .setId(IdUtil.simpleUUID())     //加入id确保生成的token都不一样
+                .setSubject(authentication.getName())
                 .compact();
     }
 
@@ -87,21 +90,23 @@ public class TokenProvider implements InitializingBean {
      * @return  spring security的用户信息认证对象
      */
     Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder()    //Jwt token的相关信息全都放在Claims对象中
-                .setSigningKey(key)
-                .build()
+        Claims claims = getClaims(token);   //Jwt token的相关信息全都放在Claims对象中
+
+        // fix bug: 当前用户如果没有任何权限时，在输入用户名后，刷新验证码会抛IllegalArgumentException
+        Object authoritiesStr = claims.get(AUTHORITIES_KEY);
+        Collection<? extends GrantedAuthority> authorities =
+                ObjectUtil.isNotEmpty(authoritiesStr) ?
+                        Arrays.stream(authoritiesStr.toString().split(","))
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList()) : Collections.emptyList();
+        User principal = new User(claims.getSubject(), "******", authorities);
+        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    public Claims getClaims(String token) {
+        return jwtParser
                 .parseClaimsJws(token)
                 .getBody();
-
-        Object authoritiesStr = claims.get(AUTHORITIES_KEY);
-        Collection<? extends GrantedAuthority> authorities = ObjectUtil.isNotEmpty(authoritiesStr) ?
-                Arrays.stream(authoritiesStr.toString().split(",")).map(SimpleGrantedAuthority::new).collect(Collectors.toList())
-                : Collections.emptyList();
-        //此User对象实现了UserDetails接口，可用于认证
-        User principal = new User(claims.getSubject(), "", authorities);
-        //UsernamePasswordAuthenticationToken继承了AbstractAuthenticationToken类，而此类又实现了Authentication接口，而Authentication接口会调用子类
-        //  UserDetailsService的方法loadUserByUserName(username)，对传入的用户名进行验证
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 
     /**

@@ -7,13 +7,17 @@ package com.lpl.utils;
 public class AppConstant {
 
     /**
+     * 用于IP定位转换
+     */
+    public static final String REGION = "内网IP|内网IP";
+    /**
      * windows系统
      */
-    private static final String WIN = "win";
+    public static final String WIN = "win";
     /**
      * mac os
      */
-    private static final String MAC = "mac";
+    public static final String MAC = "mac";
 
     /**
      * 常用接口uri

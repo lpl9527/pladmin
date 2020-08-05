@@ -10,11 +10,16 @@ import com.lpl.utils.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Objects;
 
 /**
  * @author lpl
@@ -37,13 +42,20 @@ public class UserController {
 
         //根据档期那用户名获取用户信息
         UserDto user = userService.findByName(SecurityUtils.getCurrentUsername());
-        if (passwordEncoder.matches(oldPass, user.getPassword())) {
+        if (!passwordEncoder.matches(oldPass, user.getPassword())) {
             throw new BadRequestException("修改密码失败，旧密码错误！");
         }
         if (passwordEncoder.matches(newPass, user.getPassword())) {
             throw new BadRequestException("修改密码失败，新密码不能与旧密码相同！");
         }
         //修改密码
-        userService.updatePass();
+        userService.updatePass(user.getUsername(), passwordEncoder.encode(newPass));
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation("修改头像")
+    @PostMapping(value = "/api/users/updateAvatar")
+    public ResponseEntity<Object> updateAvatar(@RequestParam MultipartFile avatar) {
+        return new ResponseEntity<>(userService.updateAvatar(avatar), HttpStatus.OK);
     }
 }

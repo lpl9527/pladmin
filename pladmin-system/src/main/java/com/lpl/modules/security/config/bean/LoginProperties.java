@@ -5,6 +5,9 @@ import com.lpl.utils.StringUtils;
 import com.wf.captcha.*;
 import com.wf.captcha.base.Captcha;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.awt.*;
 import java.util.Objects;
 
@@ -13,12 +16,15 @@ import java.util.Objects;
  * 登录相关配置
  */
 @Data
+@Component
 public class LoginProperties {
 
+    @Value("${login.single}")
     private boolean singleLogin = false;    //是否单用户登录
 
     private LoginCode loginCode;    //登录验证码
 
+    @Value("${login.cache-enable}")
     private boolean cacheEnable;    //是否缓存登录信息
 
     public boolean isSingleLogin() {
@@ -45,7 +51,6 @@ public class LoginProperties {
     /**
      * 根据配置信息生产验证码
      * @param loginCode
-     * @return
      */
     private Captcha switchCaptcha(LoginCode loginCode) {
         Captcha captcha;

@@ -6,11 +6,11 @@ spring:
     druid:
       db-type: com.alibaba.druid.pool.DruidDataSource
       driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-      url: jdbc:log4jdbc:mysql://192.168.2.74:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
-      #url: jdbc:log4jdbc:mysql://localhost:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+      #url: jdbc:log4jdbc:mysql://192.168.2.74:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+      url: jdbc:log4jdbc:mysql://localhost:3306/eladmin?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
       username: root
-      password: supwisdom
-      #password: Gepoint
+      #password: supwisdom
+      password: Gepoint
       #初始连接数
       initial-size: 5
       #最小连接数
@@ -47,10 +47,6 @@ spring:
         wall:
           config:
             multi-statement-allow: true
-  security:
-    user:
-      name: user
-      password: user
 
 #jwt相关配置
 jwt:
@@ -70,6 +66,44 @@ jwt:
   #续期时间（单位：毫秒），默认1小时
   renew: 3600000
 
-#是否限制单用户登录
-single:
-  login: false
+#登录相关配置
+login:
+  #是否限制单用户登录
+  single: false
+  #登录是否缓存
+  cache-enable: true
+  #登录验证码相关配置
+  login-code:
+    #验证码类型 查看LoginProperties类
+    code-type: arithmetic
+    #验证码有效时间（单位：分钟）
+    expiration: 2
+    #验证码宽度
+    width: 111
+    #验证码高度
+    height: 36
+    #验证码内容长度
+    length: 2
+    # 字体名称，为空则使用默认字体
+    font-name:
+    # 字体大小
+    font-size: 25
+
+#文件相关配置
+file:
+  #各系统文件路径配置
+  # mac系统
+  mac:
+    path: ~/file/
+    avatar: ~/avatar/
+  # linux系统
+  linux:
+    path: /home/pladmin/file/
+    avatar: /home/pladmin/avatar
+  # windows系统
+  windows:
+    path: C:\pladmin\file\
+    avatar: C:\pladmin\avatar\
+  # 文件大小限制（单位：MB）
+  maxSize: 100
+  avatarMaxSize: 5

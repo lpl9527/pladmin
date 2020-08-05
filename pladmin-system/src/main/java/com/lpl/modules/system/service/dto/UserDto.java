@@ -41,11 +41,11 @@ public class UserDto extends BaseDTO {
      */
     private String gender;
     /**
-     * 虚拟名称
+     * 头像名称
      */
     private String avatarName;
     /**
-     * 虚拟路径
+     * 头像路径
      */
     private String avatarPath;
     /**

@@ -1,5 +1,6 @@
 package com.lpl.modules.system.service.impl;
 
+import com.lpl.config.FileProperties;
 import com.lpl.exception.EntityNotFoundException;
 import com.lpl.modules.security.service.UserCacheClean;
 import com.lpl.modules.system.domain.User;
@@ -7,15 +8,20 @@ import com.lpl.modules.system.mapstruct.UserMapper;
 import com.lpl.modules.system.repository.UserRepository;
 import com.lpl.modules.system.service.UserService;
 import com.lpl.modules.system.service.dto.UserDto;
-import com.lpl.utils.CacheKey;
-import com.lpl.utils.RedisUtils;
+import com.lpl.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.constraints.NotBlank;
+import java.io.File;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author lpl
@@ -28,6 +34,7 @@ public class UserServiceImpl implements UserService {
 
     private final RedisUtils redisUtils;
     private final UserCacheClean userCacheClean;    //用户登录信息缓存清理工具类
+    private final FileProperties fileProperties;    //文件配置类
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -61,6 +68,44 @@ public class UserServiceImpl implements UserService {
         redisUtils.del(CacheKey.USER_NAME + username);
         //删除ConcurrentHashMap中的用户缓存
         flushCache(username);
+    }
+
+    /**
+     * 修改用户头像
+     * @param multipartFile  用户头像图片文件
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, String> updateAvatar(MultipartFile multipartFile) {
+
+        //根据用户名查询用户对象
+        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername());
+        //获取原来的头像路径
+        String oldPath = user.getAvatarPath();
+
+        //文件上传
+        File file = FileUtils.upload(multipartFile, fileProperties.getPath().getAvatar());
+
+        //更新文件信息
+        user.setAvatarName(file.getName());
+        user.setAvatarPath(Objects.requireNonNull(file).getPath());
+
+        //保存用户
+        userRepository.save(user);
+
+        if (StringUtils.isNotBlank(oldPath)) {
+            //删除原来的头像文件
+            FileUtils.del(oldPath);
+        }
+
+        //根据用户名删除缓存信息
+        @NotBlank String username = user.getUsername();
+        redisUtils.del(CacheKey.USER_NAME + username);
+        flushCache(username);
+
+        return new HashMap<String, String>(1){{
+            put("avatar", file.getName());
+        }};
     }
 
     /**
