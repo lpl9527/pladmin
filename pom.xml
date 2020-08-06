@@ -12,6 +12,7 @@
     <modules>
         <module>pladmin-system</module>
         <module>pladmin-common</module>
+        <module>pladmin-tools</module>
     </modules>
 
     <name>PL-ADMIN 后台管理系统</name>
