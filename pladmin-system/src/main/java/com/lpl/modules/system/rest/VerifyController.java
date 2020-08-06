@@ -1,6 +1,8 @@
 package com.lpl.modules.system.rest;
 
 import com.lpl.domain.vo.EmailVo;
+import com.lpl.modules.system.service.VerifyService;
+import com.lpl.utils.enums.CodeEnum;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/code")
 public class VerifyController {
 
+    private VerifyService verifyService;
+
     @ApiOperation("发送邮箱重置验证码")
     @PostMapping(value = "/sendEmailCode")
     public ResponseEntity<Object> sendEmailCode(@RequestParam String email) {
-        EmailVo emailVo =
+        //发送邮件验证码
+        EmailVo emailVo = verifyService.sendEmailCode(email, CodeEnum.EMAIL_RESET_EMAIL_CODE.getKey());
     }
 }

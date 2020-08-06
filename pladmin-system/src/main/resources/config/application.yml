@@ -16,8 +16,8 @@ spring:
   #redis相关配置
   redis:
     database: 0
-    host: 192.168.2.75
-    #host: 59.110.154.99
+    #host: 192.168.2.75
+    host: 59.110.154.99
     port: 6379
     password:
     timeout: 5000

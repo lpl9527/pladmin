@@ -27,7 +27,8 @@ public enum CodeEnum {
      * 通过邮箱重置密码
      */
     EMAIL_RESET_PWD_CODE("email_reset_pwd_code_", "通过邮箱重置密码");
-    private final String type;
+
+    private final String key;
 
     private final String description;
 }
