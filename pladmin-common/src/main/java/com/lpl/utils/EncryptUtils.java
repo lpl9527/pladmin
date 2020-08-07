@@ -17,6 +17,24 @@ public class EncryptUtils {
     private static Cipher cipher;
     private static final IvParameterSpec IV = new IvParameterSpec(STR_PARAM.getBytes(StandardCharsets.UTF_8));
 
+    public static void main(String[] args) throws Exception{
+
+        System.out.println("-----------------DES对称加密、解密开始----------------------");
+        String text  = "rcusowgeudkbheba";    //明文
+        System.out.println("明文为：" + text);
+
+        //DES对称加密
+        String encryptText = desEncrypt(text);
+        System.out.println("DES对称加密后的结果为：" + encryptText);
+
+        //DES对称解密
+        String decryptText = desDecrypt(encryptText);
+        System.out.println("DES对称解密后的结果为：" + decryptText);
+
+        System.out.println("-----------------DES对称加密、解密结束----------------------");
+
+    }
+
     /**
      * 根据要加密的文本生成DESKeySpec对象
      * @param source

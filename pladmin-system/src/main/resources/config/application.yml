@@ -36,9 +36,9 @@ spring:
     open-in-view: true
 
 
-#登录图形验证码有效时间（单位：分钟）
-loginCode:
-  expiration: 2
+#邮箱验证码有效时间（单位：秒）
+code:
+  expiration: 300
 
 #密码加密传输，前端公钥加密、后端私钥解密
 rsa:

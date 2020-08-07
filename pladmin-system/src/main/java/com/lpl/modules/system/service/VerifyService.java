@@ -8,9 +8,9 @@ import com.lpl.domain.vo.EmailVo;
 public interface VerifyService {
 
     /**
-     * 发送邮箱重置验证码
+     * 构建邮箱验证码视图对象
      * @param email 新邮箱
      * @param key redis中key
      */
-    EmailVo sendEmailCode(String email, String key);
+    EmailVo BuildEmailCodeVO(String email, String key);
 }

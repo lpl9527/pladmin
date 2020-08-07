@@ -26,6 +26,12 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <!--引入模板引擎，解决hutool工具包读取邮件等模板时缺失模板引擎问题-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+        </dependency>
+
         <!--springboot websocket-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
