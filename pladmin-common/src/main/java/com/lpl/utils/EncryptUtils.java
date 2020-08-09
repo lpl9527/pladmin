@@ -20,7 +20,7 @@ public class EncryptUtils {
     public static void main(String[] args) throws Exception{
 
         System.out.println("-----------------DES对称加密、解密开始----------------------");
-        String text  = "rcusowgeudkbheba";    //明文
+        String text  = "csvewakqhtoyijbd";    //明文
         System.out.println("明文为：" + text);
 
         //DES对称加密

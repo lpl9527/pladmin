@@ -71,6 +71,22 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 根据用户名更新用户邮箱
+     * @param username  用户名
+     * @param email 新邮箱
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateEmail(String username, String email) {
+        //更新邮箱
+        userRepository.updateEmail(username, email);
+
+        //清除redis及系统的用户缓存
+        redisUtils.del(CacheKey.USER_NAME + username);
+        flushCache(username);
+    }
+
+    /**
      * 修改用户头像
      * @param multipartFile  用户头像图片文件
      */
@@ -85,19 +101,15 @@ public class UserServiceImpl implements UserService {
 
         //文件上传
         File file = FileUtils.upload(multipartFile, fileProperties.getPath().getAvatar());
-
         //更新文件信息
         user.setAvatarName(file.getName());
         user.setAvatarPath(Objects.requireNonNull(file).getPath());
-
         //保存用户
         userRepository.save(user);
-
         if (StringUtils.isNotBlank(oldPath)) {
             //删除原来的头像文件
             FileUtils.del(oldPath);
         }
-
         //根据用户名删除缓存信息
         @NotBlank String username = user.getUsername();
         redisUtils.del(CacheKey.USER_NAME + username);
@@ -106,6 +118,26 @@ public class UserServiceImpl implements UserService {
         return new HashMap<String, String>(1){{
             put("avatar", file.getName());
         }};
+    }
+
+    /**
+     * 个人中心修改用户资料
+     * @param user
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateCenter(User user) {
+
+        //根据用户id查询用户
+        User newUser = userRepository.findById(user.getId()).orElseGet(User::new);
+        //更新用户信息
+        newUser.setNickName(user.getNickName());
+        newUser.setPhone(user.getPhone());
+        newUser.setGender(user.getGender());
+        //保存用户
+        userRepository.save(newUser);
+        //清理redis和系统用户信息缓存
+        delCaches(newUser.getId(), newUser.getUsername());
     }
 
     /**

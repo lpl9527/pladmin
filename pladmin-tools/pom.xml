@@ -19,10 +19,10 @@
     </properties>
 
     <dependencies>
-        <!--引入系统公共模块-->
+        <!--引入系统日志模块，日志模块已经包含了公共模块-->
         <dependency>
             <groupId>com.lpl</groupId>
-            <artifactId>pladmin-common</artifactId>
+            <artifactId>pladmin-logging</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

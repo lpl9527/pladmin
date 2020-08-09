@@ -77,34 +77,27 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    //测试邮件发送
     public static void main(String[] args) {
 
         MailAccount account = new MailAccount();
         account.setHost("smtp.qq.com");
         account.setPort(465);
         account.setAuth(true);
-        account.setFrom("1481782542@qq.com");
-        account.setUser("lpl");
-        account.setPass("csvewakqhtoyijbd");
-        account.setCharset(CharsetUtil.CHARSET_UTF_8);
 
+        //这两个值一定要相等，否则会报认证错误（不是授权码的问题）
+        account.setFrom("1481782542@qq.com");
+        account.setUser("1481782542@qq.com");
+
+        //account.setPass("csvewakqhtoyijbd");
+        account.setCharset(CharsetUtil.CHARSET_UTF_8);
         account.setSocketFactoryPort(465);
         account.setSocketFactoryClass("javax.net.ssl.SSLSocketFactory");
 
         account.setSslEnable(true);
         account.setStarttlsEnable(true);
         //发送邮件
-        MailUtil.send(account, CollUtil.newArrayList("1481782542@qq.com"), "测试", "邮件来自lpl测试", false);
-
-       /* MailAccount account = new MailAccount();
-        account.setHost("smtp.163.com");
-        account.setPort(25);
-        account.setAuth(true);
-        account.setFrom("w173759@126.com");
-        account.setUser("hutool");
-        account.setPass("18226283322fei");
-        MailUtil.send(account, CollUtil.newArrayList("1481782542@qq.com"), "测试", "邮件来自Hutool测试", false);*/
-
+        MailUtil.send(account, CollUtil.newArrayList("443024317@qq.com"), "测试", "邮件来自lpl测试", false);
     }
 
     /**

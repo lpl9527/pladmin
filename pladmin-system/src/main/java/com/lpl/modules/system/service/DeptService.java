@@ -1,6 +1,8 @@
 package com.lpl.modules.system.service;
 
 import com.lpl.modules.system.domain.Dept;
+import com.lpl.modules.system.service.dto.DeptDto;
+import com.lpl.modules.system.service.dto.DeptQueryCriteria;
 
 import java.util.List;
 import java.util.Set;
@@ -29,4 +31,12 @@ public interface DeptService {
      * @param deptList
      */
     List<Long> getDeptChildren(Long deptPid, List<Dept> deptList);
+
+    /**
+     * 查询所有部门数据
+     * @param criteria
+     * @param isQuery
+     * @throws Exception
+     */
+    List<DeptDto> queryAll(DeptQueryCriteria criteria, Boolean isQuery) throws Exception;
 }

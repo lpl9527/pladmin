@@ -13,4 +13,11 @@ public interface VerifyService {
      * @param key redis中key
      */
     EmailVo BuildEmailCodeVO(String email, String key);
+
+    /**
+     * 验证redis中验证码
+     * @param key   键
+     * @param code  前台输入的验证码
+     */
+    void validatedCode(String key, String code);
 }

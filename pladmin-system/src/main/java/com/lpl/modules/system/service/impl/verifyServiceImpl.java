@@ -56,12 +56,30 @@ public class verifyServiceImpl implements VerifyService {
             //获取模板内容
             content = template.render(Dict.create().set("code", code));
             //创建视图对象
-            emailVo = new EmailVo(Collections.singletonList(email), "PL-ADMIN后天管理系统", content);
+            emailVo = new EmailVo(Collections.singletonList(email), "PL-ADMIN后台管理系统", content);
         }else {     //已经发送过验证码就再次发送原来的验证码
             content = template.render(Dict.create().set("code", oldCode));
             emailVo = new EmailVo(Collections.singletonList(email), "PL-ADMIN后台管理系统", content);
         }
 
         return emailVo;
+    }
+
+    /**
+     * 验证redis中验证码
+     * @param key   键
+     * @param code  前台输入的验证码
+     */
+    @Override
+    public void validatedCode(String key, String code) {
+        //从redis中获取验证码
+        Object value = redisUtils.get(key);
+        //比较
+        if (null == value || !value.toString().equals(code)) {
+            throw new BadRequestException("无效的验证码");
+        }else {
+            //验证完成删除验证码
+            redisUtils.del(key);
+        }
     }
 }
