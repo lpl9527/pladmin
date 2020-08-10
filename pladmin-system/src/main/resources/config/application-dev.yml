@@ -101,11 +101,11 @@ file:
   # linux系统
   linux:
     path: /home/pladmin/file/
-    avatar: /home/pladmin/avatar
+    avatar: /home/pladmin/avatar/
   # windows系统
   windows:
     path: C:\pladmin\file\
     avatar: C:\pladmin\avatar\
-  # 文件大小限制（单位：MB）
+  # 文件大小限制（单位：MB）updateAvatar
   maxSize: 100
   avatarMaxSize: 5
