@@ -19,7 +19,7 @@
 
     <dependencies>
 
-        <!--引入系统公共模块-->
+        <!--引入系统工具模块，工具模块包含了公共模块和日志模块-->
         <dependency>
             <groupId>com.lpl</groupId>
             <artifactId>pladmin-tools</artifactId>

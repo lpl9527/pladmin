@@ -2,6 +2,7 @@ package com.lpl.modules.security.rest;
 
 import cn.hutool.core.util.IdUtil;
 import com.lpl.annotation.AnonymousAccess;
+import com.lpl.annotation.Log;
 import com.lpl.config.RsaProperties;
 import com.lpl.exception.BadRequestException;
 import com.lpl.modules.security.config.SecurityProperties;
@@ -74,6 +75,7 @@ public class AuthorizationController {
     @Resource
     private LoginProperties loginProperties;
 
+    @Log("用户登录")
     @ApiOperation("用户登录")
     @AnonymousAccess
     @PostMapping(value = "/auth/login")
