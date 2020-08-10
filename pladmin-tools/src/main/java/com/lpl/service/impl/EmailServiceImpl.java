@@ -94,7 +94,7 @@ public class EmailServiceImpl implements EmailService {
         account.setSslEnable(true);
         account.setStarttlsEnable(true);
         //发送邮件
-        MailUtil.send(account, CollUtil.newArrayList("1481782542@qq.com"), "测试", "邮件来自lpl测试", false);
+        MailUtil.send(account, CollUtil.newArrayList("443024317@qq.com"), "测试", "邮件来自lpl测试", false);
 
        /* MailAccount account = new MailAccount();
         account.setHost("smtp.163.com");
