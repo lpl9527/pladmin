@@ -8,10 +8,13 @@ import com.lpl.modules.system.mapstruct.UserMapper;
 import com.lpl.modules.system.repository.UserRepository;
 import com.lpl.modules.system.service.UserService;
 import com.lpl.modules.system.service.dto.UserDto;
+import com.lpl.modules.system.service.dto.UserQueryCriteria;
 import com.lpl.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,6 +55,17 @@ public class UserServiceImpl implements UserService {
         }else {
             return userMapper.toDto(user);  //将Entity转为MapStruct映射的Dto
         }
+    }
+
+    /**
+     * 分页查询用户
+     * @param criteria 查询条件
+     * @param pageable 分页参数
+     */
+    @Override
+    public Object queryAll(UserQueryCriteria criteria, Pageable pageable) {
+        Page<User> page = userRepository.findAll((root, criteriaQuery, criteriaBuilder) -> QueryHelp.getPredicate(root, criteria, criteriaBuilder), pageable);
+        return PageUtil.toPage(page.map(userMapper::toDto));
     }
 
     /**

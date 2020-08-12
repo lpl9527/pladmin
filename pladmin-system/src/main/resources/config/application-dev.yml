@@ -79,7 +79,7 @@ login:
     #验证码类型 查看LoginProperties类
     code-type: arithmetic
     #验证码有效时间（单位：分钟）
-    expiration: 2
+    expiration: 3
     #验证码宽度
     width: 111
     #验证码高度

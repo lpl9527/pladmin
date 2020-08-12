@@ -2,6 +2,8 @@ package com.lpl.modules.system.service;
 
 import com.lpl.modules.system.domain.User;
 import com.lpl.modules.system.service.dto.UserDto;
+import com.lpl.modules.system.service.dto.UserQueryCriteria;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
@@ -16,6 +18,13 @@ public interface UserService {
      * 根据用户名查询用户
      */
     UserDto findByName(String username);
+
+    /**
+     * 分页查询用户
+     * @param criteria 查询条件
+     * @param pageable 分页参数
+     */
+    Object queryAll(UserQueryCriteria criteria, Pageable pageable);
 
     /**
      * 修改密码
