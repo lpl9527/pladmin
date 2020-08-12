@@ -20,7 +20,7 @@ spring:
     host: 59.110.154.99
     port: 6379
     password:
-    timeout: 5000
+    timeout: 10000
 
   #jpa相关配置
   jpa:
