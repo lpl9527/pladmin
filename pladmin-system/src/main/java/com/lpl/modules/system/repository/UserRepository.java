@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Date;
+import java.util.Set;
 
 /**
  * @author lpl
@@ -20,6 +21,12 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
      * @param username
      */
     User findByUsername(String username);
+
+    /**
+     * 根据邮箱查询用户
+     * @param email
+     */
+    User findByEmail(String email);
 
     /**
      * 修改密码
@@ -41,4 +48,10 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query(value = "update sys_user set email = ?2 where username = ?1",
             nativeQuery = true)
     void updateEmail(String username, String email);
+
+    /**
+     * 根据id列表批量删除
+     * @param ids
+     */
+    void deleteAllByIdIn(Set<Long> ids);
 }

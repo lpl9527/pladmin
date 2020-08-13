@@ -39,4 +39,23 @@ public interface DeptService {
      * @throws Exception
      */
     List<DeptDto> queryAll(DeptQueryCriteria criteria, Boolean isQuery) throws Exception;
+
+    /**
+     * 根据id查询部门
+     * @param id
+     */
+    DeptDto findById(Long id);
+
+    /**
+     * 递归查询部门上级部门列表
+     * @param deptDto 本级部门
+     * @param depts 上级部门列表
+     */
+    List<DeptDto> getSuperior(DeptDto deptDto, List<Dept> depts);
+
+    /**
+     * 构造树形部门数据
+     * @param deptDtos
+     */
+    Object buildTree(List<DeptDto> deptDtos);
 }

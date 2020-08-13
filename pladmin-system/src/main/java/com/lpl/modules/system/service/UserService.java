@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author lpl
@@ -18,6 +19,12 @@ public interface UserService {
      * 根据用户名查询用户
      */
     UserDto findByName(String username);
+
+    /**
+     * 根据用户id查询
+     * @param id
+     */
+    UserDto findById(Long id);
 
     /**
      * 分页查询用户
@@ -51,4 +58,16 @@ public interface UserService {
      * @param user
      */
     void updateCenter(User user);
+
+    /**
+     * 新增用户
+     * @param user
+     */
+    void create(User user);
+
+    /**
+     * 批量删除用户
+     * @param ids
+     */
+    void delete(Set<Long> ids);
 }

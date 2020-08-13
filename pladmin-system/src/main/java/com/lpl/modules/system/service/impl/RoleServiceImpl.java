@@ -2,23 +2,26 @@ package com.lpl.modules.system.service.impl;
 
 import com.lpl.modules.system.domain.Menu;
 import com.lpl.modules.system.domain.Role;
+import com.lpl.modules.system.domain.User;
+import com.lpl.modules.system.mapstruct.RoleMapper;
 import com.lpl.modules.system.mapstruct.RoleSmallMapper;
 import com.lpl.modules.system.repository.RoleRepository;
 import com.lpl.modules.system.service.RoleService;
+import com.lpl.modules.system.service.dto.RoleDto;
 import com.lpl.modules.system.service.dto.RoleSmallDto;
 import com.lpl.modules.system.service.dto.UserDto;
 import com.lpl.utils.StringUtils;
+import com.lpl.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -32,6 +35,7 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;    //角色持久层接口
     private final RoleSmallMapper roleSmallMapper;
+    private final RoleMapper roleMapper;
 
     /**
      * 根据用户id查询用户的角色对象列表
@@ -68,4 +72,41 @@ public class RoleServiceImpl implements RoleService {
                 map(Menu::getPermission).collect(Collectors.toSet());
         return permissions.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
     }
+
+    /**
+     * 查询全部角色
+     */
+    @Override
+    public List<RoleDto> queryAll() {
+        Sort sort = new Sort(Sort.Direction.ASC, "level");
+        return roleMapper.toDto(roleRepository.findAll(sort));
+    }
+
+    /**
+     * 根据id查询角色
+     * @param id
+     */
+    @Override
+    @Cacheable(key = "'id:' + #p0")
+    @Transactional(rollbackFor = Exception.class)
+    public RoleDto findById(Long id) {
+        Role role = roleRepository.findById(id).orElseGet(Role::new);
+        ValidationUtil.isNull(role.getId(), "Role", "id", id);
+        return roleMapper.toDto(role);
+    }
+
+    /**
+     * 根据角色集合查询用户最高角色级别
+     * @param roles
+     */
+    @Override
+    public Integer findByRoles(Set<Role> roles) {
+        Set<RoleDto> roleDtos = new HashSet<>();
+        for (Role role : roles) {
+            //根据id查询角色放入集合
+            roleDtos.add(findById(role.getId()));
+        }
+        return Collections.min(roleDtos.stream().map(RoleDto::getLevel).collect(Collectors.toList()));
+    }
+
 }

@@ -26,4 +26,9 @@ public interface DeptRepository extends JpaRepository<Dept, Long>, JpaSpecificat
      * @param pid
      */
     List<Dept> findByPid(Long pid);
+
+    /**
+     * 获取顶级部门
+     */
+    List<Dept> findByPidIsNull();
 }

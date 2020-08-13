@@ -1,6 +1,7 @@
 package com.lpl.modules.system.service.impl;
 
 import com.lpl.config.FileProperties;
+import com.lpl.exception.EntityExistException;
 import com.lpl.exception.EntityNotFoundException;
 import com.lpl.modules.security.service.UserCacheClean;
 import com.lpl.modules.system.domain.User;
@@ -21,10 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import java.io.File;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author lpl
@@ -55,6 +53,19 @@ public class UserServiceImpl implements UserService {
         }else {
             return userMapper.toDto(user);  //将Entity转为MapStruct映射的Dto
         }
+    }
+
+    /**
+     * 根据用户id查询
+     * @param id
+     */
+    @Override
+    @Cacheable(key = "'id:' + #p0")
+    @Transactional(rollbackFor = Exception.class)
+    public UserDto findById(Long id) {
+        User user = userRepository.findById(id).orElseGet(User::new);
+        ValidationUtil.isNull(user.getId(), "User", "id", id);
+        return userMapper.toDto(user);
     }
 
     /**
@@ -152,6 +163,39 @@ public class UserServiceImpl implements UserService {
         userRepository.save(newUser);
         //清理redis和系统用户信息缓存
         delCaches(newUser.getId(), newUser.getUsername());
+    }
+
+    /**
+     * 新增用户
+     * @param user
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void create(User user) {
+        //根据用户名判断用户是否已经存在
+        if (null != userRepository.findByUsername(user.getUsername())) {
+            throw new EntityExistException(User.class, "username", user.getUsername());
+        }
+        //根据邮箱判断邮箱是否已经存在
+        if (userRepository.findByEmail(user.getEmail()) != null) {
+            throw new EntityExistException(User.class, "email", user.getEmail());
+        }
+        userRepository.save(user);
+    }
+
+    /**
+     * 批量删除用户
+     * @param ids
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Set<Long> ids) {
+        for (Long id : ids) {
+            //清理缓存
+            UserDto userDto = findById(id);
+            delCaches(userDto.getId(), userDto.getUsername());
+        }
+        userRepository.deleteAllByIdIn(ids);
     }
 
     /**

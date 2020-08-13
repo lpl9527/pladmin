@@ -6,10 +6,8 @@ import com.lpl.config.RsaProperties;
 import com.lpl.exception.BadRequestException;
 import com.lpl.modules.system.domain.User;
 import com.lpl.modules.system.domain.vo.UserPassVo;
-import com.lpl.modules.system.service.DataService;
-import com.lpl.modules.system.service.DeptService;
-import com.lpl.modules.system.service.UserService;
-import com.lpl.modules.system.service.VerifyService;
+import com.lpl.modules.system.service.*;
+import com.lpl.modules.system.service.dto.RoleSmallDto;
 import com.lpl.modules.system.service.dto.UserDto;
 import com.lpl.modules.system.service.dto.UserQueryCriteria;
 import com.lpl.utils.PageUtil;
@@ -30,8 +28,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author lpl
@@ -48,6 +49,7 @@ public class UserController {
     private final VerifyService verifyService;
     private final DeptService deptService;
     private final DataService dataService;
+    private final RoleService roleService;
 
     @Log("查询用户")
     @ApiOperation("查询用户")
@@ -138,5 +140,49 @@ public class UserController {
         //更新用户
         userService.updateCenter(user);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Log("新增用户")
+    @ApiOperation("新增用户")
+    @PostMapping
+    public ResponseEntity<Object> create(@Validated @RequestBody User user) {
+        checkLevel(user);
+        //设置默认密码为："123456"
+        user.setPassword(passwordEncoder.encode("123456"));
+        userService.create(user);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @Log("删除用户")
+    @ApiOperation("删除用户")
+    @DeleteMapping
+    @PreAuthorize("@pl.check('user:del')")
+    public ResponseEntity<Object> delete(@RequestBody Set<Long> ids) {
+        for (Long id : ids) {
+            //根据当前用户id获取用户最高角色权限
+            Integer currentLevel = Collections.min(roleService.findByUserId(SecurityUtils.getCurrentUserId()).stream().map(RoleSmallDto::getLevel).collect(Collectors.toList()));
+            //获取要删除用户的最高权限
+            Integer optLevel = Collections.min(roleService.findByUserId(id).stream().map(RoleSmallDto::getLevel).collect(Collectors.toList()));
+            if (currentLevel > optLevel) {
+                throw new BadRequestException("角色权限不足，不能删除：" + userService.findById(id).getUsername());
+            }
+        }
+        //批量删除用户
+        userService.delete(ids);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    /**
+     * 权限检查，如果当前用户的角色级别低于创建用户的角色级别，则抛出权限不足
+     * @param user
+     */
+    private void checkLevel(User user) {
+        //获取当前用户的最高权限级别
+        Integer currentLevel = Collections.min(roleService.findByUserId(SecurityUtils.getCurrentUserId()).stream().map(RoleSmallDto::getLevel).collect(Collectors.toList()));
+        //获取要创建用户的最高角色级别
+        Integer optLevel = roleService.findByRoles(user.getRoles());
+        if (currentLevel > optLevel) {
+            throw new BadRequestException("角色权限不足！");
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.lpl.modules.system.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.lpl.modules.system.domain.Dept;
 import com.lpl.modules.system.mapstruct.DeptMapper;
@@ -10,6 +11,7 @@ import com.lpl.modules.system.service.dto.DeptQueryCriteria;
 import com.lpl.utils.QueryHelp;
 import com.lpl.utils.SecurityUtils;
 import com.lpl.utils.StringUtils;
+import com.lpl.utils.ValidationUtil;
 import com.lpl.utils.enums.DataScopeEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
@@ -18,9 +20,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author lpl
@@ -120,6 +121,76 @@ public class DeptServiceImpl implements DeptService {
             return deduplication(list);
         }
         return list;
+    }
+
+    /**
+     * 根据id查询部门
+     * @param id
+     */
+    @Override
+    @Cacheable(key = "'id:' + #p0")
+    public DeptDto findById(Long id) {
+        //根据id查询部门
+        Dept dept = deptRepository.findById(id).orElseGet(Dept::new);
+        ValidationUtil.isNull(dept.getId(),"Dept","id",id);
+        return deptMapper.toDto(dept);
+    }
+
+    /**
+     * 递归查询部门上级部门列表
+     * @param deptDto 本级部门
+     * @param depts 上级部门列表
+     */
+    @Override
+    public List<DeptDto> getSuperior(DeptDto deptDto, List<Dept> depts) {
+        //如当前部门没有上级部门，则为顶级部门，获取，返回
+        if (deptDto.getPid() == null) {
+            //获取顶级部门
+            depts.addAll(deptRepository.findByPidIsNull());
+            return deptMapper.toDto(depts);
+        }
+        depts.addAll(deptRepository.findByPid(deptDto.getPid()));
+        return getSuperior(findById(deptDto.getPid()), depts);
+    }
+
+    /**
+     * 构造树形部门数据
+     * @param deptDtos
+     */
+    @Override
+    public Object buildTree(List<DeptDto> deptDtos) {
+        Set<DeptDto> trees = new LinkedHashSet<>();
+        Set<DeptDto> depts= new LinkedHashSet<>();
+        List<String> deptNames = deptDtos.stream().map(DeptDto::getName).collect(Collectors.toList());
+        boolean isChild;
+        for (DeptDto deptDTO : deptDtos) {
+            isChild = false;
+            if (deptDTO.getPid() == null) {
+                trees.add(deptDTO);
+            }
+            for (DeptDto it : deptDtos) {
+                if (it.getPid() != null && deptDTO.getId().equals(it.getPid())) {
+                    isChild = true;
+                    if (deptDTO.getChildren() == null) {
+                        deptDTO.setChildren(new ArrayList<>());
+                    }
+                    deptDTO.getChildren().add(it);
+                }
+            }
+            if(isChild) {
+                depts.add(deptDTO);
+            } else if(deptDTO.getPid() != null &&  !deptNames.contains(findById(deptDTO.getPid()).getName())) {
+                depts.add(deptDTO);
+            }
+        }
+
+        if (CollectionUtil.isEmpty(trees)) {
+            trees = depts;
+        }
+        Map<String,Object> map = new HashMap<>(2);
+        map.put("totalElements",deptDtos.size());
+        map.put("content",CollectionUtil.isEmpty(trees)? deptDtos :trees);
+        return map;
     }
 
     /**
