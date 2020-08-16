@@ -4,6 +4,8 @@ import com.lpl.modules.system.domain.Dept;
 import com.lpl.modules.system.service.dto.DeptDto;
 import com.lpl.modules.system.service.dto.DeptQueryCriteria;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -47,6 +49,31 @@ public interface DeptService {
     DeptDto findById(Long id);
 
     /**
+     * 新增部门
+     * @param dept
+     */
+    void create(Dept dept);
+
+    /**
+     * 编辑部门
+     * @param dept
+     */
+    void update(Dept dept);
+
+    /**
+     * 批量删除部门
+     * @param deptDtos
+     */
+    void delete(Set<DeptDto> deptDtos);
+
+    /**
+     * 获取待删除的部门集合
+     * @param deptList
+     * @param deptDtos
+     */
+    Set<DeptDto> getDeleteDepts(List<Dept> deptList, Set<DeptDto> deptDtos);
+
+    /**
      * 递归查询部门上级部门列表
      * @param deptDto 本级部门
      * @param depts 上级部门列表
@@ -58,4 +85,18 @@ public interface DeptService {
      * @param deptDtos
      */
     Object buildTree(List<DeptDto> deptDtos);
+
+    /**
+     * 验证部门是否被角色或者用户关联
+     * @param deptDtos
+     */
+    void verification(Set<DeptDto> deptDtos);
+
+    /**
+     * 导出部门数据
+     * @param deptDtos 待导出数据
+     * @param response
+     * @throws IOException
+     */
+    void download(List<DeptDto> deptDtos, HttpServletResponse response) throws IOException;
 }

@@ -1,13 +1,23 @@
 package com.lpl.utils;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.poi.excel.BigExcelWriter;
+import cn.hutool.poi.excel.ExcelUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author lpl
@@ -16,6 +26,34 @@ import java.util.Date;
 public class FileUtils extends FileUtil {
 
     private static final Logger log = LoggerFactory.getLogger(FileUtil.class);
+
+    /**
+     * 系统临时目录
+     * <pre>
+     *     java.io.tmpdir
+     *     windows : C:\Users/xxx\AppData\Local\Temp\
+     *     linux: /temp
+     * </pre>
+     */
+    public static final String SYS_TEM_DIR = System.getProperty("java.io.tmpdir") + File.separator;
+
+    /**
+     * 定义GB的计算常量
+     */
+    private static final int GB = 1024 * 1024 * 1024;
+    /**
+     * 定义MB的计算常量
+     */
+    private static final int MB = 1024 * 1024;
+    /**
+     * 定义KB的计算常量
+     */
+    private static final int KB = 1024;
+
+    /**
+     * 格式化小数
+     */
+    private static final DecimalFormat DF = new DecimalFormat("0.00");
 
     /**
      * 文件上传
@@ -79,5 +117,23 @@ public class FileUtils extends FileUtil {
             }
         }
         return fileName;
+    }
+
+    public static void downloadExcel(List<Map<String, Object>> list, HttpServletResponse response) throws IOException {
+        String tempPath = SYS_TEM_DIR + IdUtil.fastSimpleUUID() + ".xlsx";
+        File file = new File(tempPath);
+        BigExcelWriter writer = ExcelUtil.getBigWriter(file);
+        // 一次性写出内容，使用默认样式，强制输出标题
+        writer.write(list, true);
+        //response为HttpServletResponse对象
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
+        //test.xls是弹出下载对话框的文件名，不能为中文，中文请自行编码
+        response.setHeader("Content-Disposition", "attachment;filename=file.xlsx");
+        ServletOutputStream out = response.getOutputStream();
+        // 终止后删除临时文件
+        file.deleteOnExit();
+        writer.flush(out, true);
+        //此处记得关闭输出Servlet流
+        IoUtil.close(out);
     }
 }

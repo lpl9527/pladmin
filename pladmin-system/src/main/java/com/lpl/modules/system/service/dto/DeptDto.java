@@ -35,8 +35,15 @@ public class DeptDto extends BaseDTO {
     /**
      * 获取是否有子部门
      */
-    public Boolean getHasChidren() {
+    public Boolean getHasChildren() {
         return subCount > 0;
+    }
+
+    /**
+     * 是否是叶子部门
+     */
+    public Boolean getLeaf() {
+        return subCount <= 0;
     }
     /**
      * 获取部门标签

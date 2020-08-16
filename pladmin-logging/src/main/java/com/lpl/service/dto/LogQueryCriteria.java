@@ -14,7 +14,10 @@ import java.util.List;
 public class LogQueryCriteria {
 
     @Query(blurry = "username,description,address,requestIp,method,params")
-    private String blurry;      //多字段模糊查询
+    private String blurry;      //多字段模糊查询（这种多字段模糊查询的方式会查询到其它用户的操作日志）
+
+    @Query(propName = "username", type = Query.Type.EQUAL)
+    private String username;    //根据用户名来查询，查询方式为相等
 
     @Query
     private String logType;     //日志类型

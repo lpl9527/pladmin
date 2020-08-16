@@ -24,7 +24,7 @@ public class UserQueryCriteria implements Serializable {
     @Query(propName = "id", type = Query.Type.IN, joinName = "dept")
     private Set<Long> deptIds = new HashSet<>();    //用于存放要查询的部门id及当前用户具有访问权限的部门id集合
 
-    @Query(blurry = "eamil, username, nickName")
+    @Query(blurry = "email,username,nickName")      //特别注意：多个字段之间不能有空格
     private String blurry;  //查询条件匹配的字段
 
     @Query

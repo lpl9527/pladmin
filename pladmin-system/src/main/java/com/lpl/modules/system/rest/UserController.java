@@ -28,6 +28,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -184,5 +186,25 @@ public class UserController {
         if (currentLevel > optLevel) {
             throw new BadRequestException("角色权限不足！");
         }
+    }
+
+    @Log("导出用户数据")
+    @ApiOperation("导出用户数据")
+    @GetMapping(value = "/download")
+    @PreAuthorize("@pl.check('user:list')")
+    public void download(HttpServletResponse response, UserQueryCriteria criteria) throws IOException {
+        userService.download(userService.queryAll(criteria), response);
+    }
+
+    @Log("编辑用户")
+    @ApiOperation("编辑用户")
+    @PutMapping
+    @PreAuthorize("@pl.check('user:edit')")
+    public ResponseEntity<Object> update(@Validated(User.Update.class) @RequestBody User user) {
+        //检查用户权限
+        checkLevel(user);
+        //更新
+        userService.update(user);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

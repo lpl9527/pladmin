@@ -3,11 +3,14 @@ package com.lpl.modules.system.service.impl;
 import com.lpl.config.FileProperties;
 import com.lpl.exception.EntityExistException;
 import com.lpl.exception.EntityNotFoundException;
+import com.lpl.modules.security.service.OnlineUserService;
 import com.lpl.modules.security.service.UserCacheClean;
 import com.lpl.modules.system.domain.User;
 import com.lpl.modules.system.mapstruct.UserMapper;
 import com.lpl.modules.system.repository.UserRepository;
 import com.lpl.modules.system.service.UserService;
+import com.lpl.modules.system.service.dto.JobSmallDto;
+import com.lpl.modules.system.service.dto.RoleSmallDto;
 import com.lpl.modules.system.service.dto.UserDto;
 import com.lpl.modules.system.service.dto.UserQueryCriteria;
 import com.lpl.utils.*;
@@ -20,9 +23,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author lpl
@@ -37,6 +43,7 @@ public class UserServiceImpl implements UserService {
     private final UserCacheClean userCacheClean;    //用户登录信息缓存清理工具类
     private final FileProperties fileProperties;    //文件配置类
 
+    private final OnlineUserService onlineUserService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -77,6 +84,16 @@ public class UserServiceImpl implements UserService {
     public Object queryAll(UserQueryCriteria criteria, Pageable pageable) {
         Page<User> page = userRepository.findAll((root, criteriaQuery, criteriaBuilder) -> QueryHelp.getPredicate(root, criteria, criteriaBuilder), pageable);
         return PageUtil.toPage(page.map(userMapper::toDto));
+    }
+
+    /**
+     * 查询所有，不分页
+     * @param criteria 查询条件
+     */
+    @Override
+    public List<UserDto> queryAll(UserQueryCriteria criteria) {
+        List<User> users = userRepository.findAll((root, criteriaQuery, criteriaBuilder) -> QueryHelp.getPredicate(root, criteria, criteriaBuilder));
+        return userMapper.toDto(users);
     }
 
     /**
@@ -196,6 +213,83 @@ public class UserServiceImpl implements UserService {
             delCaches(userDto.getId(), userDto.getUsername());
         }
         userRepository.deleteAllByIdIn(ids);
+    }
+
+    /**
+     * 编辑用户
+     * @param resources 更新用户信息
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void update(User resources) {
+        //先根据id查询用户
+        User user = userRepository.findById(resources.getId()).orElseGet(User::new);
+        //根据邮箱和用户名查询用户
+        User user1 = userRepository.findByUsername(resources.getUsername());
+        User user2 = userRepository.findByEmail(resources.getEmail());
+        //更新时保证用户名和邮箱不能重复
+        if (user1 != null && !user.getId().equals(user1.getId())) {
+            throw new EntityExistException(User.class, "username", resources.getUsername());
+        }
+        if (user2 != null && !user.getId().equals(user2.getId())) {
+            throw new EntityExistException(User.class, "email", resources.getEmail());
+        }
+
+        // 如果用户的角色改变，清理缓存
+        if (!resources.getRoles().equals(user.getRoles())) {
+            redisUtils.del(CacheKey.DATA_USER + resources.getId());
+            redisUtils.del(CacheKey.MENU_USER + resources.getId());
+            redisUtils.del(CacheKey.ROLE_AUTH + resources.getId());
+        }
+        // 如果用户名称修改
+        if(!resources.getUsername().equals(user.getUsername())){
+            redisUtils.del("user::username:" + user.getUsername());
+        }
+        // 如果用户被禁用，则清除用户登录信息
+        if(!resources.getEnabled()){
+            onlineUserService.kickOutForUsername(resources.getUsername());
+        }
+        user.setUsername(resources.getUsername());
+        user.setEmail(resources.getEmail());
+        user.setEnabled(resources.getEnabled());
+        user.setRoles(resources.getRoles());
+        user.setDept(resources.getDept());
+        user.setJobs(resources.getJobs());
+        user.setPhone(resources.getPhone());
+        user.setNickName(resources.getNickName());
+        user.setGender(resources.getGender());
+        //保存用户
+        userRepository.save(user);
+        // 清除缓存
+        delCaches(user.getId(), user.getUsername());
+    }
+
+    /**
+     * 导出用户数据
+     * @param userDtos 待导出的数据
+     * @param response
+     * @throws IOException
+     */
+    @Override
+    public void download(List<UserDto> userDtos, HttpServletResponse response) throws IOException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (UserDto userDto : userDtos) {
+            //获取用户角色列表
+            List<String> roles = userDto.getRoles().stream().map(RoleSmallDto::getName).collect(Collectors.toList());
+            //表格每一行数据
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("用户名", userDto.getUsername());
+            map.put("角色", roles);
+            map.put("部门", userDto.getDept().getName());
+            map.put("岗位", userDto.getJobs().stream().map(JobSmallDto::getName).collect(Collectors.toList()));
+            map.put("邮箱", userDto.getEmail());
+            map.put("状态", userDto.getEnabled() ? "启用" : "禁用");
+            map.put("手机号码", userDto.getPhone());
+            map.put("修改密码的时间", userDto.getPwdResetTime());
+            map.put("创建日期", userDto.getCreateTime());
+            list.add(map);
+        }
+        FileUtils.downloadExcel(list, response);
     }
 
     /**

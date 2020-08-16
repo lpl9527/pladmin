@@ -48,7 +48,7 @@ public class MenuDto extends BaseDTO {
     /**
      * 获取是否有子菜单
      */
-    public Boolean getHasChidren(){
+    public Boolean getHasChildren(){
         return subCount > 0;
     }
     /**

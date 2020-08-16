@@ -2,23 +2,27 @@ package com.lpl.modules.system.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
+import com.lpl.exception.BadRequestException;
 import com.lpl.modules.system.domain.Dept;
+import com.lpl.modules.system.domain.User;
 import com.lpl.modules.system.mapstruct.DeptMapper;
 import com.lpl.modules.system.repository.DeptRepository;
+import com.lpl.modules.system.repository.RoleRepository;
+import com.lpl.modules.system.repository.UserRepository;
 import com.lpl.modules.system.service.DeptService;
 import com.lpl.modules.system.service.dto.DeptDto;
 import com.lpl.modules.system.service.dto.DeptQueryCriteria;
-import com.lpl.utils.QueryHelp;
-import com.lpl.utils.SecurityUtils;
-import com.lpl.utils.StringUtils;
-import com.lpl.utils.ValidationUtil;
+import com.lpl.utils.*;
 import com.lpl.utils.enums.DataScopeEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +38,9 @@ public class DeptServiceImpl implements DeptService {
 
     private final DeptRepository deptRepository;
     private final DeptMapper deptMapper;
+    private final RedisUtils redisUtils;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     /**
      * 根据角色id查询具有操作权限的部门列表
@@ -137,6 +144,107 @@ public class DeptServiceImpl implements DeptService {
     }
 
     /**
+     * 新增部门
+     * @param dept
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void create(Dept dept) {
+        //保存
+        deptRepository.save(dept);
+        //设置子节点个数为0
+        dept.setSubCount(0);
+        //清理缓存
+        redisUtils.del("dept::pid:" + (dept.getPid() == null ? 0 : dept.getPid()));
+        //更新子节点数量
+        updateSubCnt(dept.getPid());
+    }
+
+    /**
+     * 编辑部门
+     * @param resources
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void update(Dept resources) {
+        //获取旧部门父id
+        Long oldPid = findById(resources.getId()).getPid();
+        //获取新的父部门id
+        Long newPid = resources.getPid();
+        if(resources.getPid() != null && resources.getId().equals(resources.getPid())) {
+            throw new BadRequestException("上级不能为自己");
+        }
+        Dept dept = deptRepository.findById(resources.getId()).orElseGet(Dept::new);
+        ValidationUtil.isNull( dept.getId(),"Dept","id",resources.getId());
+        resources.setId(dept.getId());
+        //保存部门
+        deptRepository.save(resources);
+        //更新父部门的子节点数目
+        updateSubCnt(oldPid);
+        updateSubCnt(newPid);
+        //清理缓存
+        delCaches(resources.getId(), oldPid, newPid);
+    }
+
+    /**
+     * 批量删除部门
+     * @param deptDtos
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Set<DeptDto> deptDtos) {
+        for (DeptDto deptDto : deptDtos) {
+            // 清理缓存
+            delCaches(deptDto.getId(), deptDto.getPid(), null);
+            //根据id删除部门
+            deptRepository.deleteById(deptDto.getId());
+            //更新所在部门子部门数量
+            updateSubCnt(deptDto.getPid());
+        }
+    }
+
+    /**
+     * 获取待删除的部门集合
+     * @param deptList
+     * @param deptDtos
+     */
+    @Override
+    public Set<DeptDto> getDeleteDepts(List<Dept> deptList, Set<DeptDto> deptDtos) {
+        for (Dept dept : deptList) {
+            deptDtos.add(deptMapper.toDto(dept));
+            List<Dept> depts = deptRepository.findByPid(dept.getId());
+            if(depts!=null && depts.size()!=0){
+                //递归获取待删除部门集合
+                getDeleteDepts(depts, deptDtos);
+            }
+        }
+        return deptDtos;
+    }
+
+    /**
+     * 更新部门子节点数量
+     * @param deptId
+     */
+    private void updateSubCnt(Long deptId) {
+        if (null != deptId) {
+            //根据部门id查询子节点数量
+            int count = deptRepository.countByPid(deptId);
+            //更新子节点数量
+            deptRepository.updateSubCntById(count, deptId);
+        }
+    }
+
+    public void delCaches(Long id, Long oldPid, Long newPid) {
+        //根据部门id查询用户列表
+        List<User> users = userRepository.findByDeptId(id);
+        //删除相关数据权限缓存
+        redisUtils.delByKeys("data::user:",users.stream().map(User::getId).collect(Collectors.toSet()));
+        redisUtils.del("dept::id:" + id);
+        redisUtils.del("dept::pid:" + (oldPid == null ? 0 : oldPid));
+        redisUtils.del("dept::pid:" + (newPid == null ? 0 : newPid));
+    }
+
+    /**
      * 递归查询部门上级部门列表
      * @param deptDto 本级部门
      * @param depts 上级部门列表
@@ -191,6 +299,41 @@ public class DeptServiceImpl implements DeptService {
         map.put("totalElements",deptDtos.size());
         map.put("content",CollectionUtil.isEmpty(trees)? deptDtos :trees);
         return map;
+    }
+
+    /**
+     * 验证部门是否被角色或者用户关联
+     * @param deptDtos
+     */
+    @Override
+    public void verification(Set<DeptDto> deptDtos) {
+       //获取部门列表集合
+        Set<Long> deptIds = deptDtos.stream().map(DeptDto::getId).collect(Collectors.toSet());
+        if(userRepository.countByDepts(deptIds) > 0){
+            throw new BadRequestException("所选部门存在用户关联，请解除后再试！");
+        }
+        if(roleRepository.countByDepts(deptIds) > 0){
+            throw new BadRequestException("所选部门存在角色关联，请解除后再试！");
+        }
+    }
+
+    /**
+     * 导出部门数据
+     * @param deptDtos 待导出数据
+     * @param response
+     * @throws IOException
+     */
+    @Override
+    public void download(List<DeptDto> deptDtos, HttpServletResponse response) throws IOException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (DeptDto deptDTO : deptDtos) {
+            Map<String,Object> map = new LinkedHashMap<>();
+            map.put("部门名称", deptDTO.getName());
+            map.put("部门状态", deptDTO.getEnabled() ? "启用" : "停用");
+            map.put("创建日期", deptDTO.getCreateTime());
+            list.add(map);
+        }
+        FileUtils.downloadExcel(list, response);
     }
 
     /**

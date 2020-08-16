@@ -6,6 +6,9 @@ import com.lpl.modules.system.service.dto.UserQueryCriteria;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +35,12 @@ public interface UserService {
      * @param pageable 分页参数
      */
     Object queryAll(UserQueryCriteria criteria, Pageable pageable);
+
+    /**
+     * 查询所有，不分页
+     * @param criteria 查询条件
+     */
+    List<UserDto> queryAll(UserQueryCriteria criteria);
 
     /**
      * 修改密码
@@ -70,4 +79,18 @@ public interface UserService {
      * @param ids
      */
     void delete(Set<Long> ids);
+
+    /**
+     * 编辑用户
+     * @param user
+     */
+    void update(User user);
+
+    /**
+     * 导出用户数据
+     * @param userDtos 待导出的数据
+     * @param response
+     * @throws IOException
+     */
+    void download(List<UserDto> userDtos, HttpServletResponse response) throws IOException;
 }

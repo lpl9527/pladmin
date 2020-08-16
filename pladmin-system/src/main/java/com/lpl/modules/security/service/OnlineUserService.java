@@ -7,6 +7,7 @@ import com.lpl.utils.EncryptUtils;
 import com.lpl.utils.RedisUtils;
 import com.lpl.utils.StringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -139,5 +140,19 @@ public class OnlineUserService {
     public void logout(String token) {
         String key = securityProperties.getOnlineKey() + token;
         redisUtils.del(key);
+    }
+
+    /**
+     * 根据用户名强退用户
+     * @param username
+     */
+    @Async
+    public void kickOutForUsername(String username) {
+        List<OnlineUserDto> onlineUsers = getAll(username);
+        for (OnlineUserDto onlineUser : onlineUsers) {
+            if (onlineUser.getUserName().equals(username)) {
+                kickOut(onlineUser.getKey());
+            }
+        }
     }
 }
