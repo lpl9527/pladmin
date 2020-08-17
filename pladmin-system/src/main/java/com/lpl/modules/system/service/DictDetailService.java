@@ -1,5 +1,6 @@
 package com.lpl.modules.system.service;
 
+import com.lpl.modules.system.domain.DictDetail;
 import com.lpl.modules.system.service.dto.DictDetailQueryCriteria;
 import org.springframework.data.domain.Pageable;
 
@@ -17,4 +18,22 @@ public interface DictDetailService {
      * @param pageable 分页参数
      */
     Map<String, Object> queryAll(DictDetailQueryCriteria criteria, Pageable pageable);
+
+    /**
+     * 创建字典详情
+     * @param dictDetail
+     */
+    void create(DictDetail dictDetail);
+
+    /**
+     * 更新字典详情
+     * @param dictDetail
+     */
+    void update(DictDetail dictDetail);
+
+    /**
+     * 删除字典详情
+     * @param id
+     */
+    void delete(Long id);
 }

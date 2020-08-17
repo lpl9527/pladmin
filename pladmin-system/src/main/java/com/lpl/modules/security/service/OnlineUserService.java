@@ -3,18 +3,16 @@ package com.lpl.modules.security.service;
 import com.lpl.modules.security.config.SecurityProperties;
 import com.lpl.modules.security.service.dto.JwtUserDto;
 import com.lpl.modules.security.service.dto.OnlineUserDto;
-import com.lpl.utils.EncryptUtils;
-import com.lpl.utils.RedisUtils;
-import com.lpl.utils.StringUtils;
+import com.lpl.utils.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * @author lpl
@@ -66,6 +64,17 @@ public class OnlineUserService {
         //根据登录时间排序
         onlineUserDtos.sort(((o1, o2) -> o2.getLoginTime().compareTo(o1.getLoginTime())));
         return onlineUserDtos;
+    }
+
+    /**
+     * 分页查询在线用户
+     * @param filter 查询条件
+     * @param pageable 分页条件
+     */
+    public Map<String, Object> getAll(String filter, Pageable pageable) {
+        List<OnlineUserDto> onlineUserDtos = getAll(filter);
+        //分页
+        return PageUtil.toPage(PageUtil.toPage(pageable.getPageNumber(),pageable.getPageSize(), onlineUserDtos), onlineUserDtos.size());
     }
 
     /**
@@ -154,5 +163,26 @@ public class OnlineUserService {
                 kickOut(onlineUser.getKey());
             }
         }
+    }
+
+    /**
+     * 导出在线用户
+     * @param all
+     * @param response
+     * @throws IOException
+     */
+    public void download(List<OnlineUserDto> users, HttpServletResponse response) throws IOException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (OnlineUserDto user : users) {
+            Map<String,Object> map = new LinkedHashMap<>();
+            map.put("用户名", user.getUserName());
+            map.put("部门", user.getDept());
+            map.put("登录IP", user.getIp());
+            map.put("登录地点", user.getAddress());
+            map.put("浏览器", user.getBrowser());
+            map.put("登录日期", user.getLoginTime());
+            list.add(map);
+        }
+        FileUtils.downloadExcel(list, response);
     }
 }
