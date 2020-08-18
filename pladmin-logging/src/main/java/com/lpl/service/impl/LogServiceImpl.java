@@ -1,5 +1,7 @@
 package com.lpl.service.impl;
 
+import cn.hutool.core.lang.Dict;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.json.JSONObject;
 import com.lpl.domain.Log;
 import com.lpl.repository.LogRepository;
@@ -7,9 +9,7 @@ import com.lpl.service.LogService;
 import com.lpl.service.dto.LogQueryCriteria;
 import com.lpl.service.mapstruct.LogErrorMapper;
 import com.lpl.service.mapstruct.LogSmallMapper;
-import com.lpl.utils.PageUtil;
-import com.lpl.utils.QueryHelp;
-import com.lpl.utils.StringUtils;
+import com.lpl.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -20,10 +20,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class LogServiceImpl implements LogService {
     private final LogErrorMapper logErrorMapper;
 
     /**
-     * 保存日志数据，开启异步日志记录
+     * AOP保存日志数据，开启异步日志记录
      * @param username  用户名
      * @param browser   浏览器
      * @param ip    请求ip
@@ -104,5 +104,83 @@ public class LogServiceImpl implements LogService {
         //分页查询
         Page<Log> page = logRepository.findAll(((root, criteriaQuery, cb) -> QueryHelp.getPredicate(root, criteria, cb)), pageable);
         return PageUtil.toPage(page.map(logSmallMapper::toDto));
+    }
+
+    /**
+     * 分页查询所有INFO类型日志
+     * @param criteria
+     * @param pageable
+     */
+    @Override
+    public Object queryAll(LogQueryCriteria criteria, Pageable pageable) {
+        Page<Log> page = logRepository.findAll(((root, criteriaQuery, cb) -> QueryHelp.getPredicate(root, criteria, cb)), pageable);
+        String status = "ERROR";
+        if (status.equals(criteria.getLogType())) {
+            return PageUtil.toPage(page.map(logErrorMapper::toDto));
+        }
+        return page;
+    }
+
+    /**
+     * 查询全部INFO类型数据，不分页
+     * @param criteria
+     */
+    @Override
+    public List<Log> queryAll(LogQueryCriteria criteria) {
+        return logRepository.findAll(((root, criteriaQuery, cb) -> QueryHelp.getPredicate(root, criteria, cb)));
+    }
+
+    /**
+     * 日志异常详情查询
+     * @param id
+     */
+    @Override
+    public Object findByErrDetail(Long id) {
+        Log log = logRepository.findById(id).orElseGet(Log::new);
+        ValidationUtil.isNull(log.getId(), "Log", "id", id);
+        byte[] details = log.getExceptionDetail();
+        return Dict.create().set("exception", new String(ObjectUtil.isNotNull(details) ? details : "".getBytes()));
+    }
+
+    /**
+     * 删除所有INFO日志
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delAllByInfo() {
+        logRepository.deleteByLogType("INFO");
+    }
+
+    /**
+     * 删除所有INFO日志
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delAllByError() {
+        logRepository.deleteByLogType("ERROR");
+    }
+
+    /**
+     * 导出日志数据
+     * @param logs
+     * @param response
+     * @throws IOException
+     */
+    @Override
+    public void download(List<Log> logs, HttpServletResponse response) throws IOException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Log log : logs) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("用户名", log.getUsername());
+            map.put("IP", log.getRequestIp());
+            map.put("IP来源", log.getAddress());
+            map.put("描述", log.getDescription());
+            map.put("浏览器", log.getBrowser());
+            map.put("请求耗时/毫秒", log.getTime());
+            map.put("异常详情", new String(ObjectUtil.isNotNull(log.getExceptionDetail()) ? log.getExceptionDetail() : "".getBytes()));
+            map.put("创建日期", log.getCreateTime());
+            list.add(map);
+        }
+        FileUtils.downloadExcel(list, response);
     }
 }

@@ -136,4 +136,24 @@ public class FileUtils extends FileUtil {
         //此处记得关闭输出Servlet流
         IoUtil.close(out);
     }
+
+    /**
+     * 文件大小转换
+     */
+    public static String getSize(long size) {
+        String resultSize;
+        if (size / GB >= 1) {
+            //如果当前Byte的值大于等于1GB
+            resultSize = DF.format(size / (float) GB) + "GB   ";
+        } else if (size / MB >= 1) {
+            //如果当前Byte的值大于等于1MB
+            resultSize = DF.format(size / (float) MB) + "MB   ";
+        } else if (size / KB >= 1) {
+            //如果当前Byte的值大于等于1KB
+            resultSize = DF.format(size / (float) KB) + "KB   ";
+        } else {
+            resultSize = size + "B   ";
+        }
+        return resultSize;
+    }
 }

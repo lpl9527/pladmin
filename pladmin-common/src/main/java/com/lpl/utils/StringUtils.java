@@ -72,6 +72,27 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return jsonObject.get("addr", String.class);
     }
 
+    /**
+     * 获取当前机器的ip
+     */
+    public static String getLocalIp() {
+        InetAddress addr;
+        try {
+            addr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            return "unknown";
+        }
+        byte[] ipAddr = addr.getAddress();
+        StringBuilder ipAddrStr = new StringBuilder();
+        for (int i = 0; i < ipAddr.length; i++) {
+            if (i > 0) {
+                ipAddrStr.append(".");
+            }
+            ipAddrStr.append(ipAddr[i] & 0xFF);
+        }
+        return ipAddrStr.toString();
+    }
+
     public static void main(String[] args) {
         getAddressInfo("117.71.53.38");
     }

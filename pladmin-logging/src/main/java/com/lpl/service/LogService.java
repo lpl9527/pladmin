@@ -6,6 +6,10 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+
 /**
  * @author lpl
  * 日志业务层接口
@@ -29,4 +33,41 @@ public interface LogService {
      * @param pageable  分页参数
      */
     Object queryAllByUser(LogQueryCriteria criteria, Pageable pageable);
+
+    /**
+     * 分页查询所有INFO类型日志
+     * @param criteria
+     * @param pageable
+     */
+    Object queryAll(LogQueryCriteria criteria, Pageable pageable);
+
+    /**
+     * 查询全部INFO类型数据，不分页
+     * @param criteria
+     */
+    List<Log> queryAll(LogQueryCriteria criteria);
+
+    /**
+     * 日志异常详情查询
+     * @param id
+     */
+    Object findByErrDetail(Long id);
+
+    /**
+     * 删除所有INFO日志
+     */
+    void delAllByInfo();
+
+    /**
+     * 删除所有INFO日志
+     */
+    void delAllByError();
+
+    /**
+     * 导出日志数据
+     * @param logs
+     * @param response
+     * @throws IOException
+     */
+    void download(List<Log> logs, HttpServletResponse response) throws IOException;
 }
