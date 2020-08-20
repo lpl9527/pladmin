@@ -59,4 +59,10 @@ public interface ServerDeployService {
      * @throws IOException
      */
     void download(List<ServerDeployDto> queryAll, HttpServletResponse response) throws IOException;
+
+    /**
+     * 根据ip查询服务器信息
+     * @param ip
+     */
+    ServerDeployDto findByIp(String ip);
 }

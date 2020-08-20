@@ -130,4 +130,14 @@ public class ServerDeployServiceImpl implements ServerDeployService {
         }
         FileUtils.downloadExcel(list, response);
     }
+
+    /**
+     * 根据ip查询服务器信息
+     * @param ip
+     */
+    @Override
+    public ServerDeployDto findByIp(String ip) {
+        ServerDeploy deploy = serverDeployRepository.findByIp(ip);
+        return serverDeployMapper.toDto(deploy);
+    }
 }
