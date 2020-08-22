@@ -1,6 +1,7 @@
 package com.lpl.modules.mnt.service;
 
 import com.lpl.modules.mnt.domain.Deploy;
+import com.lpl.modules.mnt.domain.DeployHistory;
 import com.lpl.modules.mnt.service.dto.DeployDto;
 import com.lpl.modules.mnt.service.dto.DeployQueryCriteria;
 import org.springframework.data.domain.Pageable;
@@ -69,4 +70,28 @@ public interface DeployService {
      * @param appId     应用id
      */
     void deploy(String fileSavePath, Long appId);
+
+    /**
+     * 查询部署状态
+     * @param deploy
+     */
+    String serverStatus(Deploy deploy);
+
+    /**
+     * 启动服务
+     * @param deploy
+     */
+    String startServer(Deploy deploy);
+
+    /**
+     * 停止服务
+     * @param deploy
+     */
+    String stopServer(Deploy deploy);
+
+    /**
+     * 系统还原
+     * @param deployHistory
+     */
+    String serverReduction(DeployHistory deployHistory);
 }

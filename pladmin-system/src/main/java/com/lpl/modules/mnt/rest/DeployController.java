@@ -2,6 +2,7 @@ package com.lpl.modules.mnt.rest;
 
 import com.lpl.annotation.Log;
 import com.lpl.modules.mnt.domain.Deploy;
+import com.lpl.modules.mnt.domain.DeployHistory;
 import com.lpl.modules.mnt.service.DeployService;
 import com.lpl.modules.mnt.service.dto.DeployQueryCriteria;
 import com.lpl.utils.FileUtils;
@@ -107,5 +108,42 @@ public class DeployController {
         map.put("errno", 0);
         map.put("id", fileName);
         return new ResponseEntity<>(map,HttpStatus.OK);
+    }
+
+    @Log("查询服务运行状态")
+    @ApiOperation("查询服务运行状态")
+    @PostMapping(value = "/serverStatus")
+    @PreAuthorize("@pl.check('deploy:edit')")
+    public ResponseEntity<Object> serverStatus(@Validated @RequestBody Deploy deploy) {
+        //查询状态
+        String result = deployService.serverStatus(deploy);
+        return new ResponseEntity<>(result,HttpStatus.OK);
+    }
+
+    @Log("启动服务")
+    @ApiOperation("启动服务")
+    @PostMapping(value = "/startServer")
+    @PreAuthorize("@pl.check('deploy:edit')")
+    public ResponseEntity<Object> startServer(@Validated @RequestBody Deploy deploy) {
+        String result = deployService.startServer(deploy);
+        return new ResponseEntity<>(result,HttpStatus.OK);
+    }
+
+    @Log("停止服务")
+    @ApiOperation(value = "停止服务")
+    @PostMapping(value = "/stopServer")
+    @PreAuthorize("@pl.check('deploy:edit')")
+    public ResponseEntity<Object> stopServer(@Validated @RequestBody Deploy deploy){
+        String result = deployService.stopServer(deploy);
+        return new ResponseEntity<>(result,HttpStatus.OK);
+    }
+
+    @Log("系统还原")
+    @ApiOperation(value = "系统还原")
+    @PostMapping(value = "/serverReduction")
+    @PreAuthorize("@pl.check('deploy:edit')")
+    public ResponseEntity<Object> serverReduction(@Validated @RequestBody DeployHistory deployHistory){
+        String result = deployService.serverReduction(deployHistory);
+        return new ResponseEntity<>(result,HttpStatus.OK);
     }
 }

@@ -26,7 +26,6 @@ public class ConfigurerAdapter implements WebMvcConfigurer {
 
     /**
      * corsFilter用于进行跨域配置。该适配方法用于解决CorsFilter与spring security的冲突，放行所有的跨域请求
-     * @return
      */
     @Bean
     public CorsFilter corsFilter() {

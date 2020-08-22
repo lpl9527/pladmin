@@ -2,7 +2,12 @@ package com.lpl.modules.mnt.service.impl;
 
 import com.lpl.exception.BadRequestException;
 import com.lpl.modules.mnt.domain.App;
+import com.lpl.modules.mnt.domain.Deploy;
+import com.lpl.modules.mnt.domain.ServerDeploy;
 import com.lpl.modules.mnt.repository.AppRepository;
+import com.lpl.modules.mnt.repository.DeployHistoryRepository;
+import com.lpl.modules.mnt.repository.DeployRepository;
+import com.lpl.modules.mnt.repository.ServerDeployRepository;
 import com.lpl.modules.mnt.service.AppService;
 import com.lpl.modules.mnt.service.dto.AppDto;
 import com.lpl.modules.mnt.service.dto.AppQueryCriteria;
@@ -27,6 +32,9 @@ public class AppServiceImpl implements AppService {
 
     private final AppRepository appRepository;
     private final AppMapper appMapper;
+    private final DeployRepository deployRepository;
+    private final ServerDeployRepository serverDeployRepository;
+    private final DeployHistoryRepository deployHistoryRepository;
 
     /**
      * 分页查询应用
@@ -82,6 +90,20 @@ public class AppServiceImpl implements AppService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Set<Long> ids) {
         for (Long id : ids) {
+            //删除应用时也要删除其关联的部署信息、部署历史信息
+            //根据应用id查询部署信息
+            Deploy deploy = deployRepository.findDeployByAppId(id);
+            if (null != deploy) {
+                //根据部署id删除所有服务id关系
+                serverDeployRepository.deleteByDeployId(deploy.getId());
+
+                //根据部署id查询部署历史，部署历史不为空时删除此记录
+                deployHistoryRepository.deleteByDeployId(deploy.getId());
+
+                //删除部署信息
+                deployRepository.delete(deploy);
+            }
+            //删除应用
             appRepository.deleteById(id);
         }
     }

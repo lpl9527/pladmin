@@ -3,8 +3,10 @@ package com.lpl.modules.mnt.service.impl;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.lpl.exception.BadRequestException;
+import com.lpl.modules.mnt.domain.App;
 import com.lpl.modules.mnt.domain.Deploy;
 import com.lpl.modules.mnt.domain.DeployHistory;
+import com.lpl.modules.mnt.domain.ServerDeploy;
 import com.lpl.modules.mnt.repository.DeployRepository;
 import com.lpl.modules.mnt.service.DeployHistoryService;
 import com.lpl.modules.mnt.service.DeployService;
@@ -151,6 +153,178 @@ public class DeployServiceImpl implements DeployService {
     }
 
     /**
+     * 查询部署状态
+     * @param deploy
+     */
+    @Override
+    public String serverStatus(Deploy deploy) {
+        //获取所有要部署的服务器
+        Set<ServerDeploy> serverDeploys = deploy.getDeploys();
+        //获取要部署的应用信息
+        App app = deploy.getApp();
+        //遍历服务器查询应用运行状态
+        for (ServerDeploy serverDeploy : serverDeploys) {
+            StringBuilder sb = new StringBuilder();
+            //获取shell工具
+            ExecuteShellUtils executeShellUtils = this.getExecuteShellUtils(serverDeploy.getIp());
+            //WebSocket信息
+            sb.append("服务器:").append(serverDeploy.getName()).append("<br>应用:").append(app.getName());
+            //查询应用状态
+            boolean result = this.checkIsRunningStatus(app.getPort(), executeShellUtils);
+            if (result) {
+                sb.append("<br>正在运行");
+                sendMsg(sb.toString(), MsgType.INFO);
+            } else {
+                sb.append("<br>已停止!");
+                sendMsg(sb.toString(), MsgType.ERROR);
+            }
+            log.info(sb.toString());
+            executeShellUtils.close();
+        }
+        return "执行完毕";
+    }
+
+    /**
+     * 启动服务
+     * @param deploy
+     */
+    @Override
+    public String startServer(Deploy deploy) {
+        //服务器列表
+        Set<ServerDeploy> deploys = deploy.getDeploys();
+        //部署的应用
+        App app = deploy.getApp();
+        //遍历服务器列表启动服务
+        for (ServerDeploy serverDeploy : deploys) {
+            StringBuilder sb = new StringBuilder();
+            //获取shell工具
+            ExecuteShellUtils executeShellUtils = this.getExecuteShellUtils(serverDeploy.getIp());
+            //为了防止重复启动，这里先停止应用
+            this.stopApp(app.getPort(), executeShellUtils);
+            sb.append("服务器:").append(serverDeploy.getName()).append("<br>应用:").append(app.getName());
+            this.sendMsg("下发启动命令", MsgType.INFO);
+            //执行应用启动脚本启动应用
+            executeShellUtils.execute(app.getStartScript());
+            sleep(3);
+            this.sendMsg("应用启动中，请耐心等待启动结果，或者稍后手动查看运行状态", MsgType.INFO);
+            int i  = 0;
+            boolean result = false;
+            // 由于启动应用需要时间，所以需要循环获取状态，如果超过30次，则认为是启动失败
+            while (i++ < count){
+                //检查服务运行状态
+                result = this.checkIsRunningStatus(app.getPort(), executeShellUtils);
+                if(result){
+                    break;
+                }
+                // 休眠6秒
+                this.sleep(6);
+            }
+            this.sendResultMsg(result, sb);
+            log.info(sb.toString());
+
+            executeShellUtils.close();
+        }
+        return "执行完毕";
+    }
+
+    /**
+     * 停止服务
+     * @param deploy
+     */
+    @Override
+    public String stopServer(Deploy deploy) {
+        //获取服务列表
+        Set<ServerDeploy> serverDeploys = deploy.getDeploys();
+        //获取应用
+        App app = deploy.getApp();
+        //遍历停止应用
+        for (ServerDeploy serverDeploy : serverDeploys) {
+            StringBuilder sb = new StringBuilder();
+            //获取shell工具
+            ExecuteShellUtils executeShellUtils = this.getExecuteShellUtils(serverDeploy.getIp());
+            sb.append("服务器:").append(serverDeploy.getName()).append("<br>应用:").append(app.getName());
+            this.sendMsg("下发停止命令", MsgType.INFO);
+            //停止应用
+            this.stopApp(app.getPort(), executeShellUtils);
+            //休眠3秒
+            this.sleep(3);
+            //检查服务运行状态
+            boolean result = this.checkIsRunningStatus(app.getPort(), executeShellUtils);
+            if (result) {
+                sb.append("<br>关闭失败!");
+                this.sendMsg(sb.toString(), MsgType.ERROR);
+            } else {
+                sb.append("<br>关闭成功!");
+                this.sendMsg(sb.toString(), MsgType.INFO);
+            }
+            log.info(sb.toString());
+            executeShellUtils.close();
+        }
+        return "执行完毕";
+    }
+
+    /**
+     * 系统还原
+     * @param deployHistory
+     */
+    @Override
+    public String serverReduction(DeployHistory deployHistory) {
+        Long deployId = deployHistory.getDeployId();
+        //获取部署对象
+        Deploy deploy = deployRepository.findById(deployId).orElseGet(Deploy::new);
+        //获取部署时间
+        String deployDate = DateUtil.format(deployHistory.getDeployDate(), DatePattern.PURE_DATETIME_PATTERN);
+        //获取应用
+        App app = deploy.getApp();
+        if (app == null) {
+            sendMsg("应用信息不存在：" + deployHistory.getAppName(), MsgType.ERROR);
+            throw new BadRequestException("应用信息不存在：" + deployHistory.getAppName());
+        }
+        //获取备份路径
+        String backupPath = app.getBackupPath() + FILE_SEPARATOR;
+        backupPath += deployHistory.getAppName() + FILE_SEPARATOR + deployDate;
+        //获取部署路径
+        String deployPath = app.getDeployPath();
+        String ip = deployHistory.getIp();
+        //获取shell工具
+        ExecuteShellUtils executeShellUtils = this.getExecuteShellUtils(ip);
+
+        String msg;
+        msg = String.format("登陆到服务器:%s", ip);
+        log.info(msg);
+        this.sendMsg(msg, MsgType.INFO);
+        this.sendMsg("停止原来应用", MsgType.INFO);
+        //停止应用
+        this.stopApp(app.getPort(), executeShellUtils);
+        //删除原来应用
+        this.sendMsg("删除应用", MsgType.INFO);
+        executeShellUtils.execute("rm -rf " + deployPath + FILE_SEPARATOR + deployHistory.getAppName());
+        //还原应用
+        this.sendMsg("还原应用", MsgType.INFO);
+        executeShellUtils.execute("cp -r " + backupPath + "/. " + deployPath);
+        this.sendMsg("启动应用", MsgType.INFO);
+        executeShellUtils.execute(app.getStartScript());
+        this.sendMsg("应用启动中，请耐心等待启动结果，或者稍后手动查看启动状态", MsgType.INFO);
+        int i  = 0;
+        boolean result = false;
+        // 由于启动应用需要时间，所以需要循环获取状态，如果超过30次，则认为是启动失败
+        while (i++ < count){
+            //检查应用状态
+            result = this.checkIsRunningStatus(app.getPort(), executeShellUtils);
+            if(result){
+                break;
+            }
+            // 休眠6秒
+            this.sleep(6);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("服务器:").append(ip).append("<br>应用:").append(deployHistory.getAppName());
+        this.sendResultMsg(result, sb);
+        executeShellUtils.close();
+        return "";
+    }
+
+    /**
      * 部署应用到服务器
      * @param fileSavePath 本地路径
      * @param id 应用id
@@ -281,7 +455,8 @@ public class DeployServiceImpl implements DeployService {
      */
     private void stopApp(int port, ExecuteShellUtils executeShellUtils) {
         //发送停止命令
-        executeShellUtils.execute(String.format("lsof -i :%d|grep -v \"PID\"|awk '{print \"kill -9\",$2}'|sh", port));
+        String stopScript = String.format("lsof -i :%d|grep -v \"PID\"|awk '{print \"kill -9\",$2}'|sh", port);
+        executeShellUtils.execute(stopScript);
     }
 
     /**
