@@ -208,7 +208,7 @@
     </build>
 
     <!--远程仓库-->
-    <repositories>
+    <!--<repositories>
         <repository>
             <id>public</id>
             <name>aliyun nexus</name>
@@ -217,9 +217,9 @@
                 <enabled>true</enabled>
             </releases>
         </repository>
-    </repositories>
+    </repositories>-->
 
-    <pluginRepositories>
+    <!--<pluginRepositories>
         <pluginRepository>
             <id>public</id>
             <name>aliyun nexus</name>
@@ -231,5 +231,5 @@
                 <enabled>false</enabled>
             </snapshots>
         </pluginRepository>
-    </pluginRepositories>
+    </pluginRepositories>-->
 </project>

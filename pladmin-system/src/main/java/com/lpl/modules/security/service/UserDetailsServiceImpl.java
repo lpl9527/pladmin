@@ -57,10 +57,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user = userService.findByName(username);
             }catch (EntityNotFoundException e) {
                 // SpringSecurity会自动转换UsernameNotFoundException为BadCredentialsException
-                throw new UsernameNotFoundException("", e);
+                throw new UsernameNotFoundException("查询用户信息异常！", e);
             }
             if (null == user) {
-                throw new UsernameNotFoundException("");
+                throw new UsernameNotFoundException("用户名或密码错误！");
             }else {
                 if (!user.getEnabled()) {
                     throw new BadRequestException("账号未激活！");

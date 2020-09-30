@@ -89,7 +89,7 @@ public class EmailServiceImpl implements EmailService {
         account.setFrom("1481782542@qq.com");
         account.setUser("1481782542@qq.com");
 
-        //account.setPass("csvewakqhtoyijbd");
+        account.setPass("tmlquzadkbesbaee");
         account.setCharset(CharsetUtil.CHARSET_UTF_8);
         account.setSocketFactoryPort(465);
         account.setSocketFactoryClass("javax.net.ssl.SSLSocketFactory");
@@ -97,7 +97,7 @@ public class EmailServiceImpl implements EmailService {
         account.setSslEnable(true);
         account.setStarttlsEnable(true);
         //发送邮件
-        MailUtil.send(account, CollUtil.newArrayList("443024317@qq.com"), "测试", "邮件来自lpl测试", false);
+        MailUtil.send(account, CollUtil.newArrayList("liu_1481782542@163.com"), "测试", "邮件来自lpl测试", false);
 
     }
 
